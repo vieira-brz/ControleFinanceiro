@@ -1,0 +1,2 @@
+npm install express mongoose react-router-dom tailwindcss
+npx tailwindcss init
