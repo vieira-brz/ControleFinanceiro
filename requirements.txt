@@ -1,2 +1,1 @@
-npm install express mongoose react-router-dom tailwindcss
-npx tailwindcss init
+npm install express mongoose react-router-dom dotenv sass echarts body-parser axios

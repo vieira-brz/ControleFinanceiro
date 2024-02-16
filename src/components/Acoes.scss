@@ -1,0 +1,88 @@
+.Acoes {
+
+    & > h3 {
+        color: var(--s-300);
+        margin-bottom: 15px;
+
+        gap: 8px;
+        display: flex;
+        align-items: center;
+        color: var(--s-300);
+
+        img {
+            width: 20px;
+            filter: invert(1);
+        }
+    }
+
+    .slider {
+        gap: 20px;
+        display: flex;
+        overflow: auto;
+
+        .item {
+            width: 70px;
+            padding: 5px;
+            cursor: pointer;
+            position: relative;
+
+            gap: 10px;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+
+            .notify-plus {
+                right: 0;
+                width: 20px;
+                bottom: 30px;
+                height: 20px;
+                
+                display: flex;
+                position: absolute;
+                align-items: center;
+                justify-content: center;
+                
+                border-radius: 50%;
+                color: var(--t-500);
+                background: var(--s-900);
+                border: 1px solid var(--t-700);
+            }
+
+            .icon {
+                width: 58px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                padding: 12px 0;
+                border-radius: 50%;
+                transition: .2s ease;
+                background: var(--s-800);
+                border: 2px solid var(--s-800);
+
+                img {
+                    width: 30px;
+                    opacity: .7;
+                    filter: invert(1);
+                }
+            }
+
+            .desc {
+                font-size: .8rem;
+                color: var(--s-300);
+            }
+
+            &:hover {
+                .icon {
+                    background: var(--s-1000);
+                    border-color: var(--t-700);
+                }
+
+                .desc {
+                    color: var(--t-300);
+                }
+            }
+        }
+    }
+}

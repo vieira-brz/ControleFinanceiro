@@ -1,0 +1,49 @@
+.Compras {
+
+    .title {
+        gap: 10px;
+        display: flex;
+        align-items: center;
+        color: var(--s-300);
+
+        img {
+            width: 20px;
+            filter: invert(1);
+        }
+    }
+
+    .bancos-container {
+        gap: 10px;
+        display: grid;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--s-700);
+        grid-template-columns: repeat(2, calc(100% / 2));
+
+        .card-banco {
+            padding: 10px;
+            border-radius: 5px;
+            width: calc(100% - 5px);
+            background: var(--s-1000);
+            border: 1px solid var(--t-300);
+            box-shadow: 0 0 10px var(--s-900);
+
+            .valor {
+                strong {
+                    color: var(--o-600);
+                }
+            }
+        }
+    }
+
+    .table {
+        table {
+            button {
+                margin: 5px;
+    
+                &:last-child {
+                    margin: none;
+                }
+            }
+        }
+    }
+}

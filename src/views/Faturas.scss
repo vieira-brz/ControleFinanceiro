@@ -1,0 +1,42 @@
+.Faturas {
+    gap: 20px;
+    display: flex;
+    flex-direction: column;
+
+    .item {
+        h5 {
+            color: var(--s-400);
+            margin-bottom: 5px;
+        }
+    }
+
+    .valor-fatura-mes {
+        display: inline-flex;
+        align-items: flex-end;
+
+        small {
+            margin: 0 4px 4px 0;
+        }
+    }
+
+    .adicionar-fatura {
+        gap: 20px;
+        display: flex;
+        padding: 20px 0;
+        flex-direction: column;
+        border-top: 1px solid var(--s-700);
+        border-bottom: 1px solid var(--s-700);
+
+        h3 {
+            gap: 10px;
+            display: flex;
+            align-items: center;
+            color: var(--s-300);
+    
+            img {
+                width: 20px;
+                filter: invert(1);
+            }
+        }
+    }
+}

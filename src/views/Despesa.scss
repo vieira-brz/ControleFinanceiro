@@ -1,0 +1,20 @@
+.Despesa {
+
+    .container-items {
+        gap: 20px;
+        display: flex;
+        flex-direction: column;
+
+        .item {
+            h5 {
+                color: var(--s-400);
+                margin-bottom: 5px;
+            }
+        }
+    }
+
+    button {
+        width: 100%;
+        margin-top: 20px;
+    }
+}

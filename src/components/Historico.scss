@@ -1,0 +1,16 @@
+.Historico {
+    width: 100%;
+    margin-bottom: 30px;
+
+    &>h3 {
+        gap: 8px;
+        display: flex;
+        align-items: center;
+        color: var(--s-300);
+
+        img {
+            width: 20px;
+            filter: invert(1);
+        }
+    }
+}
