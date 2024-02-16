@@ -21,6 +21,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors(corsOptions))
 
+// // Middleware para verificar a chave da API em cada solicitação
+// app.use((req, res, next) => {
+//   const apiKey = req.headers['api-key'];
+
+//   if (apiKey && apiKey === process.env.DATA_API_KEY) {
+//     // Chave da API válida, permitir a continuação da solicitação
+//     next();
+//   } else {
+//     // Chave da API inválida ou ausente, retornar erro de autenticação
+//     res.status(401).json({ error: 'Unauthorized' });
+//   }
+// });
+
+
 
 // Rotas
 const financas = require('./routes/financas')
