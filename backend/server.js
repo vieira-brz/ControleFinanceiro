@@ -31,9 +31,9 @@ app.use('/financas', financas)
 
 
 // Iniciar servidor
-const DB_URI = process.env.DB_URI;
+const MONGODB_URI = process.env.DB_URI;
 
-mongoose.connect(DB_URI)
+mongoose.connect(MONGODB_URI)
   .then(() => {
 
     console.log('Conectado ao banco de dados MongoDB');
