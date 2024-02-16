@@ -1,6 +1,7 @@
 import React, { useState, useEffect, } from 'react'
 import ReactEcharts from "echarts-for-react"
 import axios from 'axios'
+import {API_URL} from '../config'
 
 // Components
 import Acoes from '../components/Acoes'
@@ -18,7 +19,7 @@ function Home() {
   const [barData, setBarData] = useState([])
   const [valorPago, setValorPago] = useState([])
   const [trendData, setTrendData] = useState([])
-
+  
   useEffect(() => {
 
     const fetchData = async () => {
@@ -29,7 +30,7 @@ function Home() {
         const mesAtual = hoje.getMonth()
         const anoAtual = hoje.getFullYear()
 
-        const response = await axios.get('http://localhost:8080/financas/despesas/65c65c76d0b4582cd7b211b2')
+        const response = await axios.get(`${API_URL}/financas/despesas/65c65c76d0b4582cd7b211b2`)
         const despesas = response.data
 
         const somaPorMes = new Array(12).fill(0)
@@ -83,40 +84,39 @@ function Home() {
 
               if (mesParcela < parcelasPagas) {
                 pagoPorMes[mesParcela] += valorParcelas
-              
               }
             }
           }
         })
 
         // Valores das faturas
-        // for (let mes = 0; mes < 12; mes++) {
-        //   let mes_api = mes < 9 ? `0${mes + 1}` : mes + 1
+        for (let mes = 0; mes < 12; mes++) {
+          let mes_api = mes < 9 ? `0${mes + 1}` : mes + 1
 
-        //   try {
-        //     const response_fatura_mes = await axios.get(`http://localhost:8080/financas/faturas/65c65c76d0b4582cd7b211b2/${anoAtual}-${mes_api}`)
-        //     const fatura = response_fatura_mes.data
-        //     const valorTotalFatura = fatura.compras.reduce((acc, compra) => acc + compra.valor, 0)
+          try {
+            const response_fatura_mes = await axios.get(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2/${anoAtual}-${mes_api}`)
+            const fatura = response_fatura_mes.data
+            const valorTotalFatura = fatura.compras.reduce((acc, compra) => acc + compra.valor, 0)
 
-        //     somaPorMes[mes] += valorTotalFatura
+            somaPorMes[mes] += valorTotalFatura
 
-        //     fatura.compras.forEach((value, index) => {
-        //       let objeto_historico = {
-        //         data: value.dataHora,
-        //         hora: value.dataHora.split('T')[1].split('.')[0],
-        //         descricao: value.descricao,
-        //         localCompra: 'Fatura Crédito',
-        //         instituicaoFinanceira: value.instituicaoFinanceira,
-        //         valorTotal: value.valor
-        //       }
+            fatura.compras.forEach((value, index) => {
+              let objeto_historico = {
+                data: value.dataHora,
+                hora: value.dataHora.split('T')[1].split('.')[0],
+                descricao: value.descricao,
+                localCompra: 'Fatura Crédito',
+                instituicaoFinanceira: value.instituicaoFinanceira,
+                valorTotal: value.valor
+              }
 
-        //       historyDataArray.push(objeto_historico)
-        //     })
+              historyDataArray.push(objeto_historico)
+            })
 
-        //   } catch (error) {
-        //     somaPorMes[mes] += 0
-        //   }
-        // }
+          } catch (error) {
+            somaPorMes[mes] += 0
+          }
+        }
 
         setHistoryData(historyDataArray)
         setBarData(somaPorMes)

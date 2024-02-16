@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/alt-text */
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
+import { API_URL } from '../config'
 
 import './Compras.scss'
 
@@ -13,7 +14,7 @@ function Compras() {
         if (!loaded) {
             const fetchData = async () => {
                 try {
-                    const response = await axios.get('http://localhost:8080/financas/despesas/65c65c76d0b4582cd7b211b2')
+                    const response = await axios.get(`${API_URL}/financas/despesas/65c65c76d0b4582cd7b211b2`)
                     const despesas = response.data.filter(despesa => despesa.numeroParcelas !== despesa.parcelasPagas);
                     setData(despesas)
                     setLoaded(true)
@@ -34,7 +35,7 @@ function Compras() {
 
     const handlePagarParcela = async (id) => {
         try {
-            const response = await axios.put(`http://localhost:8080/financas/despesas/65c65c76d0b4582cd7b211b2/${id}/pagarParcela`)
+            const response = await axios.put(`${API_URL}/financas/despesas/65c65c76d0b4582cd7b211b2/${id}/pagarParcela`)
 
             if (response.status === 200) {
 
@@ -60,7 +61,7 @@ function Compras() {
 
     const handleVoltarParcela = async (id) => {
         try {
-            const response = await axios.put(`http://localhost:8080/financas/despesas/65c65c76d0b4582cd7b211b2/${id}/retornarParcela`)
+            const response = await axios.put(`${API_URL}/financas/despesas/65c65c76d0b4582cd7b211b2/${id}/retornarParcela`)
 
             if (response.status === 200) {
 

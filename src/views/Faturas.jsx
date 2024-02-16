@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import moment from 'moment'
+import { API_URL } from '../config'
 
 import './Faturas.scss'
 
@@ -56,7 +57,7 @@ function Faturas() {
         return
       }
 
-      const response = await axios.get(`http://localhost:8080/financas/faturas/65c65c76d0b4582cd7b211b2/${mesAno}`)
+      const response = await axios.get(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2/${mesAno}`)
       const fatura = response.data
 
       // Calculando valor total da fatura
@@ -84,7 +85,7 @@ function Faturas() {
       if (!faturaDoMesSelecionado) {
 
         // Se a fatura do mês/ano selecionado não existir, criar uma nova fatura
-        await axios.post(`http://localhost:8080/financas/faturas/65c65c76d0b4582cd7b211b2`, {
+        await axios.post(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2`, {
           mes: mesAno,
           compras: [{
             dataHora: new Date(),
@@ -97,7 +98,7 @@ function Faturas() {
       } else {
 
         // Se existir, adicionar a compra à fatura existente
-        await axios.patch(`http://localhost:8080/financas/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}`, {
+        await axios.patch(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}`, {
           compras: [...faturaDoMesSelecionado.compras, {
             descricao: descricao,
             instituicaoFinanceira: instituicaoFinanceira,
@@ -119,7 +120,7 @@ function Faturas() {
   // Função para marcar uma compra como quitada
   const marcarCompraQuitada = async (idCompra) => {
     try {
-      await axios.patch(`http://localhost:8080/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}/${idCompra}`)
+      await axios.patch(`${API_URL}/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}/${idCompra}`)
 
       // Atualize a fatura após marcar a compra como quitada
       fetchFaturaDoMes()

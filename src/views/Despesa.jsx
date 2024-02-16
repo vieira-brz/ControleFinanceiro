@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { API_URL } from '../config'
 
 import './Despesa.scss'
 
@@ -57,7 +58,7 @@ function Despesa() {
     e.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:8080/financas/despesas/65c65c76d0b4582cd7b211b2', despesa);
+      const response = await axios.post(`${API_URL}/financas/despesas/65c65c76d0b4582cd7b211b2`, despesa);
 
       const message = response.data.message;
 
