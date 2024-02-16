@@ -31,9 +31,7 @@ app.use('/financas', financas)
 
 
 // Iniciar servidor
-const DB_USER = process.env.DB_USER;
-const DB_PWD = encodeURIComponent(process.env.DB_PWD);
-const DB_URI = `mongodb+srv://${DB_USER}:${DB_PWD}@finance-app.i3d2zp4.mongodb.net/app`;
+const DB_URI = process.env.DB_URI;
 
 mongoose.connect(DB_URI)
   .then(() => {
