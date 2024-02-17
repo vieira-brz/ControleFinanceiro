@@ -1,6 +1,6 @@
 import React, { useState, useEffect, } from 'react'
 import ReactEcharts from "echarts-for-react"
-import axios from 'axios'
+import axios from '../axiosConfig'
 import {API_URL} from '../config'
 
 // Components
