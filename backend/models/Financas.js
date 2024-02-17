@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const receitaSchema = new mongoose.Schema({
     descricao: String,
@@ -8,7 +8,7 @@ const receitaSchema = new mongoose.Schema({
     valorRecebido: Number,
     data: Date,
     hora: String
-});
+})
 
 const despesaSchema = new mongoose.Schema({
     descricao: String,
@@ -24,7 +24,7 @@ const despesaSchema = new mongoose.Schema({
     },
     data: Date,
     hora: String
-});
+})
 
 const compraSchema = new mongoose.Schema({
     descricao: String,
@@ -38,12 +38,12 @@ const compraSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-});
+})
 
 const faturaSchema = new mongoose.Schema({
     mes: String,
     compras: [compraSchema]
-});
+})
 
 const financasSchema = new mongoose.Schema({
     id_usuario: String,
@@ -54,8 +54,8 @@ const financasSchema = new mongoose.Schema({
     receitas: [receitaSchema],
     despesas: [despesaSchema],
     faturas: [faturaSchema]
-});
+})
 
-const Financas = mongoose.model('Financas', financasSchema);
+const Financas = mongoose.model('Financas', financasSchema)
 
-module.exports = Financas;
+module.exports = Financas

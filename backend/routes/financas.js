@@ -324,14 +324,14 @@ router.patch('/faturas/:id_usuario/:id_fatura', async (req, res) => {
         }
 
         // Verifique se a fatura existe dentro das finanças do usuário
-        const faturaIndex = financas.faturas.findIndex(fatura => fatura._id.toString() === id_fatura);
+        const faturaIndex = financas.faturas.findIndex(fatura => fatura._id.toString() === id_fatura)
 
         if (faturaIndex === -1) {
-            return res.status(404).json({ message: "Fatura não encontrada para este usuário." });
+            return res.status(404).json({ message: "Fatura não encontrada para este usuário." })
         }
         
         // Atualize as compras da fatura
-        financas.faturas[faturaIndex].compras = compras;
+        financas.faturas[faturaIndex].compras = compras
         await financas.save()
 
         res.status(200).json({ message: "Fatura atualizada com sucesso!" })
