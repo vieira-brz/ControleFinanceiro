@@ -10,6 +10,12 @@ const receitaSchema = new mongoose.Schema({
     hora: String
 })
 
+const parcelaSchema = new mongoose.Schema({
+    data: Date,
+    valor: Number,
+    quitada: Boolean
+})
+
 const despesaSchema = new mongoose.Schema({
     descricao: String,
     localCompra: String,
@@ -22,6 +28,7 @@ const despesaSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    parcelas: [parcelaSchema],
     data: Date,
     hora: String
 })

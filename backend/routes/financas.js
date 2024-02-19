@@ -112,9 +112,29 @@ router.delete('/:id_usuario', async (req, res) => {
 // 
 // DESPESAS
 // 
+const calcularParcelas = (despesa) => {
+    const parcelas = []
+
+    // Obter a data da primeira parcela
+    let dataParcela = new Date(despesa.data)
+    dataParcela.setMonth(dataParcela.getMonth() + 1) // Incrementar o mês para a primeira parcela
+
+    // Calcular e adicionar as parcelas
+    for (let i = 0; i < despesa.numeroParcelas; i++) {
+        const valorParcela = despesa.valorParcelas
+        const quitada = i < despesa.parcelasPagas // Verificar se a parcela está quitada
+
+        parcelas.push({ data: new Date(dataParcela), valor: valorParcela, quitada: quitada })
+
+        // Incrementar a data para o próximo mês
+        dataParcela.setMonth(dataParcela.getMonth() + 1)
+    }
+
+    return parcelas
+}
+
 // Rota para adicionar uma nova despesa
 router.post('/despesas/:id_usuario', async (req, res) => {
-
     const { descricao, localCompra, formaPagamento, instituicaoFinanceira, valorTotal, numeroParcelas } = req.body
     const { id_usuario } = req.params
 
@@ -132,8 +152,8 @@ router.post('/despesas/:id_usuario', async (req, res) => {
         const data = dataAtual.toISOString().split('T')[0]
         const hora = dataAtual.toTimeString().split(' ')[0]
 
-
-        financas.despesas.push({
+        // Criar a despesa com as parcelas calculadas
+        const despesa = {
             descricao,
             localCompra,
             formaPagamento,
@@ -142,15 +162,16 @@ router.post('/despesas/:id_usuario', async (req, res) => {
             numeroParcelas,
             valorParcelas,
             data,
-            hora
-        })
+            hora,
+            parcelas: calcularParcelas({ data, numeroParcelas, valorParcelas, parcelasPagas: 0 }) // Calcular as parcelas
+        }
 
+        financas.despesas.push(despesa)
         await financas.save()
 
-        res.status(201).json({ message: 'Despesa adicionada com sucesso!', despesa: financas.despesas[financas.despesas.length - 1] })
+        res.status(201).json({ message: 'Despesa adicionada com sucesso!', despesa })
 
     } catch (error) {
-
         console.error('Erro ao adicionar despesa:', error)
         res.status(500).json({ error: 'Erro interno do servidor' })
     }
@@ -178,69 +199,114 @@ router.get('/despesas/:id_usuario', async (req, res) => {
     }
 })
 
-// Rota para pagar uma parcela de uma despesa
-router.put('/despesas/:id_usuario/:id/pagarParcela', async (req, res) => {
-
-    const { id_usuario, id } = req.params
+// Rota para atualizar uma despesa
+router.get('/despesas/:id_usuario/atualizarDespesa', async (req, res) => {
+    const { id_usuario } = req.params 
 
     try {
         // Encontre o usuário
-        const financas = await Financas.findOne({ id_usuario })
+        let financas = await Financas.findOne({ id_usuario }) 
 
         if (!financas) {
-            return res.status(404).json({ error: 'Usuário não encontrado' })
+            return res.status(404).json({ error: 'Usuário não encontrado' }) 
+        }
+
+        // Buscar todas as despesas
+        const despesas = financas.despesas 
+
+        // Para cada despesa, calcular e inserir as parcelas
+        for (let i = 0; i < despesas.length; i++) {
+            const despesa = despesas[i] 
+            despesa.parcelas = calcularParcelas(despesa) 
+        }
+
+        await financas.save() 
+
+        res.status(200).json({ message: 'Parcelas calculadas e inseridas com sucesso', despesas }) 
+
+    } catch (error) {
+        console.error('Erro ao calcular e inserir parcelas:', error) 
+        res.status(500).json({ error: 'Erro interno do servidor' }) 
+    }
+}) 
+
+// Rota para pagar uma parcela de uma despesa
+router.put('/despesas/:id_usuario/:id/pagarParcela', async (req, res) => {
+    const { id_usuario, id } = req.params 
+
+    try {
+        // Encontre o usuário
+        const financas = await Financas.findOne({ id_usuario }) 
+
+        if (!financas) {
+            return res.status(404).json({ error: 'Usuário não encontrado' }) 
         }
 
         // Encontre a despesa pelo ID
-        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id)
+        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id) 
 
         if (despesaIndex === -1) {
-            return res.status(404).json({ error: 'Despesa não encontrada' })
+            return res.status(404).json({ error: 'Despesa não encontrada' }) 
         }
 
-        // Atualize o número de parcelas pagas e salve no banco de dados
-        financas.despesas[despesaIndex].parcelasPagas += 1
-        await financas.save()
+        // Atualize o número de parcelas pagas
+        financas.despesas[despesaIndex].parcelasPagas += 1 
+
+        // Marque como quitada apenas a parcela correspondente ao número de parcelas pagas
+        financas.despesas[despesaIndex].parcelas[financas.despesas[despesaIndex].parcelasPagas - 1].quitada = true;
+
+        await financas.save() 
 
         // Retorne uma resposta de sucesso
-        res.status(200).json({ message: 'Parcela paga com sucesso' })
+        res.status(200).json({ message: 'Parcela paga com sucesso' }) 
+
     } catch (error) {
-        console.error('Erro ao pagar parcela:', error)
-        res.status(500).json({ error: 'Erro interno do servidor' })
+        console.error('Erro ao pagar parcela:', error) 
+        res.status(500).json({ error: 'Erro interno do servidor' }) 
     }
-})
+}) 
 
 // Rota para voltar uma parcela de uma despesa
 router.put('/despesas/:id_usuario/:id/retornarParcela', async (req, res) => {
-
-    const { id_usuario, id } = req.params
+    const { id_usuario, id } = req.params 
 
     try {
         // Encontre o usuário
-        const financas = await Financas.findOne({ id_usuario })
+        const financas = await Financas.findOne({ id_usuario }) 
 
         if (!financas) {
-            return res.status(404).json({ error: 'Usuário não encontrado' })
+            return res.status(404).json({ error: 'Usuário não encontrado' }) 
         }
 
         // Encontre a despesa pelo ID
-        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id)
+        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id) 
 
         if (despesaIndex === -1) {
-            return res.status(404).json({ error: 'Despesa não encontrada' })
+            return res.status(404).json({ error: 'Despesa não encontrada' }) 
         }
 
-        // Atualize o número de parcelas pagas e salve no banco de dados
-        financas.despesas[despesaIndex].parcelasPagas -= 1
-        await financas.save()
+        // Verifique se há parcelas pagas
+        if (financas.despesas[despesaIndex].parcelasPagas > 0) {
 
-        // Retorne uma resposta de sucesso
-        res.status(200).json({ message: 'Parcela retornada com sucesso' })
+            // Atualize o número de parcelas pagas
+            financas.despesas[despesaIndex].parcelasPagas -= 1 
+
+            // Marque como não quitada a última parcela paga
+            financas.despesas[despesaIndex].parcelas[financas.despesas[despesaIndex].parcelasPagas].quitada = false 
+
+            await financas.save() 
+
+            // Retorne uma resposta de sucesso
+            return res.status(200).json({ message: 'Parcela retornada com sucesso' }) 
+            
+        } else {
+            return res.status(400).json({ error: 'Nenhuma parcela foi paga anteriormente' }) 
+        }
     } catch (error) {
-        console.error('Erro ao retornar parcela:', error)
-        res.status(500).json({ error: 'Erro interno do servidor' })
+        console.error('Erro ao retornar parcela:', error) 
+        res.status(500).json({ error: 'Erro interno do servidor' }) 
     }
-})
+}) 
 
 
 // 
@@ -329,7 +395,7 @@ router.patch('/faturas/:id_usuario/:id_fatura', async (req, res) => {
         if (faturaIndex === -1) {
             return res.status(404).json({ message: "Fatura não encontrada para este usuário." })
         }
-        
+
         // Atualize as compras da fatura
         financas.faturas[faturaIndex].compras = compras
         await financas.save()

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, } from 'react'
 import ReactEcharts from "echarts-for-react"
 import axios from '../axiosConfig'
-import {API_URL} from '../config'
+import { API_URL } from '../config'
 
 // Components
 import Acoes from '../components/Acoes'
@@ -19,7 +19,7 @@ function Home() {
   const [barData, setBarData] = useState([])
   const [valorPago, setValorPago] = useState([])
   const [trendData, setTrendData] = useState([])
-  
+
   useEffect(() => {
 
     const fetchData = async () => {
@@ -39,53 +39,32 @@ function Home() {
         // Valores das despesas
         despesas.forEach(despesa => {
 
-          const dataDespesa = new Date(despesa.data)
-          const anoDespesa = dataDespesa.getFullYear()
-          const mes = dataDespesa.getMonth()
+          if (despesa.formaPagamento === 'Crédito' || despesa.formaPagamento === 'Boleto') {
 
-          // Histórico de despesas do mês atual
-          if (anoAtual === anoDespesa && mesAtual === mes) {
-            historyDataArray.push(despesa)
-          }
+            for (let parcela = 0; parcela < despesa.parcelas.length; parcela++) {
 
-          // Parcelas de compras do ano anterior
-          let parcelasPagas = despesa.parcelasPagas
-          let numeroParcelas = despesa.numeroParcelas
+              const element = despesa.parcelas[parcela]
 
-          // console.log('Ano anterior:');
-          // console.log('Parcelas: ' + numeroParcelas);
-          // console.log('Pagas: ' + parcelasPagas);
-          // console.log(`${mes} - ${anoDespesa}`);
+              const data_parcela = new Date(element.data)
+              const ano_parcela = data_parcela.getFullYear()
+              const mes_parcela = data_parcela.getMonth()
 
-          if (anoDespesa !== anoAtual) {
+              if (ano_parcela === anoAtual) {
+                somaPorMes[mes_parcela] += parseFloat(despesa.valorParcelas)
 
-            let parcelasPagas_antigas = parcelasPagas;
-
-            let mes_ate_fim_ano = (11 - mes) + 1;
-            if (mes_ate_fim_ano > 0) {
-              parcelasPagas = parcelasPagas - mes_ate_fim_ano;
-            }
-
-            numeroParcelas = (numeroParcelas - parcelasPagas_antigas) + parcelasPagas;
-          }
-
-          // console.log('--------------------------');
-          // console.log('Este ano:');
-          // console.log('Parcelas: ' + numeroParcelas);
-          // console.log('Pagas: ' + parcelasPagas);
-          // console.log(`${mesAtual} - ${anoAtual}`);
-          // console.log('');
-
-          for (let mesParcela = 0; mesParcela < numeroParcelas; mesParcela++) {
-
-            if (mesParcela <= 11) {
-              const valorParcelas = parseFloat(despesa.valorParcelas)
-              somaPorMes[mesParcela] += valorParcelas
-
-              if (mesParcela < parcelasPagas) {
-                pagoPorMes[mesParcela] += valorParcelas
+                if (parcela < despesa.parcelasPagas) {
+                  pagoPorMes[mes_parcela] += parseFloat(despesa.valorParcelas)
+                }
               }
             }
+          }
+
+          const data_despesa = new Date(despesa.data)
+          const ano_despesa = data_despesa.getFullYear()
+          const mes_despesa = data_despesa.getMonth()
+
+          if (ano_despesa === anoAtual && mes_despesa === mesAtual) {
+            historyDataArray.push(despesa)
           }
         })
 
@@ -165,8 +144,8 @@ function Home() {
       setTrendData(trend)
     }
 
-    calculateTrend();
-  }, [barData]);
+    calculateTrend()
+  }, [barData])
 
   // Opções gráfico
   const option = {

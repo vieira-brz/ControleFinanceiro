@@ -19,7 +19,7 @@ function Faturas() {
 
   useEffect(() => {
     const dataAtual = new Date()
-    const mes = String(dataAtual.getMonth() + 1).padStart(2, '0') // Adiciona um zero à esquerda, se necessário
+    const mes = String(dataAtual.getMonth() + 2).padStart(2, '0') // Adiciona um zero à esquerda, se necessário
     const ano = dataAtual.getFullYear()
     const mesAnoAtual = `${ano}-${mes}`
     setMesAno(mesAnoAtual)
