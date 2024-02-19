@@ -17,7 +17,7 @@ function Despesa() {
     instituicaoFinanceira: 'Nubank',
     valorTotal: '',
     numeroParcelas: 1
-  });
+  })
 
   // Alterando dados do objeto
   const handleChange = (e) => {
@@ -32,7 +32,7 @@ function Despesa() {
     }
 
     if (name === 'numeroParcelas' && value === 0) {
-      newValue = 1;
+      newValue = 1
     }
 
     setDespesa(prevDespesa => ({
@@ -51,45 +51,24 @@ function Despesa() {
     }
 
     return ''
-  };
+  }
 
   // Requisição de insert da despesa
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     try {
-      const response = await axios.post(`${API_URL}/financas/despesas/65c65c76d0b4582cd7b211b2`, despesa);
+      const response = await axios.post(`${API_URL}/financas/despesas/65c65c76d0b4582cd7b211b2`, despesa)
 
-      const message = response.data.message;
+      const message = response.data.message
 
-      const notificationOptions = {
-        body: 'Agora você pode gerenciar essa despesa na aba "Compras".',
-        icon: './icons/cartao.png'
-      };
-
-      if (Notification.permission === 'granted') {
-        new Notification(message, notificationOptions);
-
-      } else if (Notification.permission !== 'denied') {
-
-        Notification.requestPermission().then(permission => {
-
-          if (permission === 'granted') {
-
-            new Notification(message, notificationOptions);
-
-          } else {
-            alert(message);
-          }
-        });
-      } else {
-        alert(message);
-      }
-
-      navigate(-1);
+      alert(message)
+      navigate(-1)
       
     } catch (error) {
-      console.error('Erro ao cadastrar despesa:', error);
+      alert(error)
+      navigate(-1)
+      console.error('Erro ao cadastrar despesa:', error)
     }
   }
 
