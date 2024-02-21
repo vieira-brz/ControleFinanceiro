@@ -20,6 +20,10 @@ function Home() {
   const [valorPago, setValorPago] = useState([])
   const [trendData, setTrendData] = useState([])
 
+  const [emAberto, setEmAberto] = useState([])
+  const [emTotal, setEmTotal] = useState([])
+  const [emPago, setEmPago] = useState([])
+
   useEffect(() => {
 
     const fetchData = async () => {
@@ -39,22 +43,19 @@ function Home() {
         // Valores das despesas
         despesas.forEach(despesa => {
 
-          if (despesa.formaPagamento === 'Crédito' || despesa.formaPagamento === 'Boleto') {
+          for (let parcela = 0; parcela < despesa.parcelas.length; parcela++) {
 
-            for (let parcela = 0; parcela < despesa.parcelas.length; parcela++) {
+            const element = despesa.parcelas[parcela]
 
-              const element = despesa.parcelas[parcela]
+            const data_parcela = new Date(element.data)
+            const ano_parcela = data_parcela.getFullYear()
+            const mes_parcela = data_parcela.getMonth()
 
-              const data_parcela = new Date(element.data)
-              const ano_parcela = data_parcela.getFullYear()
-              const mes_parcela = data_parcela.getMonth()
+            if (ano_parcela === anoAtual) {
+              somaPorMes[mes_parcela] += parseFloat(despesa.valorParcelas)
 
-              if (ano_parcela === anoAtual) {
-                somaPorMes[mes_parcela] += parseFloat(despesa.valorParcelas)
-
-                if (parcela < despesa.parcelasPagas) {
-                  pagoPorMes[mes_parcela] += parseFloat(despesa.valorParcelas)
-                }
+              if (parcela <= despesa.parcelasPagas) {
+                pagoPorMes[mes_parcela] += parseFloat(despesa.valorParcelas)
               }
             }
           }
@@ -80,6 +81,11 @@ function Home() {
             somaPorMes[mes] += valorTotalFatura
 
             fatura.compras.forEach((value, index) => {
+
+              if (value.quitada === true) {
+                pagoPorMes[mes] += parseFloat(value.valor)
+              }
+
               let objeto_historico = {
                 data: value.dataHora,
                 hora: value.dataHora.split('T')[1].split('.')[0],
@@ -94,8 +100,13 @@ function Home() {
 
           } catch (error) {
             somaPorMes[mes] += 0
+            pagoPorMes[mes] += 0
           }
         }
+
+        setEmAberto((somaPorMes[mesAtual + 1] - pagoPorMes[mesAtual + 1]).toFixed(2))
+        setEmTotal((somaPorMes[mesAtual + 1]).toFixed(2))
+        setEmPago((pagoPorMes[mesAtual + 1]).toFixed(2))
 
         setHistoryData(historyDataArray)
         setBarData(somaPorMes)
@@ -221,7 +232,7 @@ function Home() {
         data: barData.map(value => parseFloat(value.toFixed(2))),
       },
       {
-        name: 'Valor pago:',
+        name: 'Pago:',
         type: 'bar',
         smooth: false,
         symbol: 'none',
@@ -253,6 +264,19 @@ function Home() {
 
       <div className="content-chart">
         <ReactEcharts option={option} />
+      </div>
+
+      <div className="cards">
+        <div className="card">
+          <div>
+            <h3>Em aberto: <p><span className='ticket'>R$</span>{emAberto}</p></h3>
+          </div>
+        </div>
+        <div className="card">
+          <div>
+            <h3>Valor Pago: <p><span className='ticket'>R$</span><span>{emPago}</span> <span className='ticket'>/</span> {emTotal}</p></h3>
+          </div>
+        </div>
       </div>
 
       <Historico despesas={historyData} />

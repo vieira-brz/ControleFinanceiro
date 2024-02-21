@@ -201,112 +201,112 @@ router.get('/despesas/:id_usuario', async (req, res) => {
 
 // Rota para atualizar uma despesa
 router.get('/despesas/:id_usuario/atualizarDespesa', async (req, res) => {
-    const { id_usuario } = req.params 
+    const { id_usuario } = req.params
 
     try {
         // Encontre o usuário
-        let financas = await Financas.findOne({ id_usuario }) 
+        let financas = await Financas.findOne({ id_usuario })
 
         if (!financas) {
-            return res.status(404).json({ error: 'Usuário não encontrado' }) 
+            return res.status(404).json({ error: 'Usuário não encontrado' })
         }
 
         // Buscar todas as despesas
-        const despesas = financas.despesas 
+        const despesas = financas.despesas
 
         // Para cada despesa, calcular e inserir as parcelas
         for (let i = 0; i < despesas.length; i++) {
-            const despesa = despesas[i] 
-            despesa.parcelas = calcularParcelas(despesa) 
+            const despesa = despesas[i]
+            despesa.parcelas = calcularParcelas(despesa)
         }
 
-        await financas.save() 
+        await financas.save()
 
-        res.status(200).json({ message: 'Parcelas calculadas e inseridas com sucesso', despesas }) 
+        res.status(200).json({ message: 'Parcelas calculadas e inseridas com sucesso', despesas })
 
     } catch (error) {
-        console.error('Erro ao calcular e inserir parcelas:', error) 
-        res.status(500).json({ error: 'Erro interno do servidor' }) 
+        console.error('Erro ao calcular e inserir parcelas:', error)
+        res.status(500).json({ error: 'Erro interno do servidor' })
     }
-}) 
+})
 
 // Rota para pagar uma parcela de uma despesa
 router.put('/despesas/:id_usuario/:id/pagarParcela', async (req, res) => {
-    const { id_usuario, id } = req.params 
+    const { id_usuario, id } = req.params
 
     try {
         // Encontre o usuário
-        const financas = await Financas.findOne({ id_usuario }) 
+        const financas = await Financas.findOne({ id_usuario })
 
         if (!financas) {
-            return res.status(404).json({ error: 'Usuário não encontrado' }) 
+            return res.status(404).json({ error: 'Usuário não encontrado' })
         }
 
         // Encontre a despesa pelo ID
-        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id) 
+        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id)
 
         if (despesaIndex === -1) {
-            return res.status(404).json({ error: 'Despesa não encontrada' }) 
+            return res.status(404).json({ error: 'Despesa não encontrada' })
         }
 
         // Atualize o número de parcelas pagas
-        financas.despesas[despesaIndex].parcelasPagas += 1 
+        financas.despesas[despesaIndex].parcelasPagas += 1
 
         // Marque como quitada apenas a parcela correspondente ao número de parcelas pagas
         financas.despesas[despesaIndex].parcelas[financas.despesas[despesaIndex].parcelasPagas - 1].quitada = true;
 
-        await financas.save() 
+        await financas.save()
 
         // Retorne uma resposta de sucesso
-        res.status(200).json({ message: 'Parcela paga com sucesso' }) 
+        res.status(200).json({ message: 'Parcela paga com sucesso' })
 
     } catch (error) {
-        console.error('Erro ao pagar parcela:', error) 
-        res.status(500).json({ error: 'Erro interno do servidor' }) 
+        console.error('Erro ao pagar parcela:', error)
+        res.status(500).json({ error: 'Erro interno do servidor' })
     }
-}) 
+})
 
 // Rota para voltar uma parcela de uma despesa
 router.put('/despesas/:id_usuario/:id/retornarParcela', async (req, res) => {
-    const { id_usuario, id } = req.params 
+    const { id_usuario, id } = req.params
 
     try {
         // Encontre o usuário
-        const financas = await Financas.findOne({ id_usuario }) 
+        const financas = await Financas.findOne({ id_usuario })
 
         if (!financas) {
-            return res.status(404).json({ error: 'Usuário não encontrado' }) 
+            return res.status(404).json({ error: 'Usuário não encontrado' })
         }
 
         // Encontre a despesa pelo ID
-        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id) 
+        const despesaIndex = financas.despesas.findIndex(despesa => despesa._id.toString() === id)
 
         if (despesaIndex === -1) {
-            return res.status(404).json({ error: 'Despesa não encontrada' }) 
+            return res.status(404).json({ error: 'Despesa não encontrada' })
         }
 
         // Verifique se há parcelas pagas
         if (financas.despesas[despesaIndex].parcelasPagas > 0) {
 
             // Atualize o número de parcelas pagas
-            financas.despesas[despesaIndex].parcelasPagas -= 1 
+            financas.despesas[despesaIndex].parcelasPagas -= 1
 
             // Marque como não quitada a última parcela paga
-            financas.despesas[despesaIndex].parcelas[financas.despesas[despesaIndex].parcelasPagas].quitada = false 
+            financas.despesas[despesaIndex].parcelas[financas.despesas[despesaIndex].parcelasPagas].quitada = false
 
-            await financas.save() 
+            await financas.save()
 
             // Retorne uma resposta de sucesso
-            return res.status(200).json({ message: 'Parcela retornada com sucesso' }) 
-            
+            return res.status(200).json({ message: 'Parcela retornada com sucesso' })
+
         } else {
-            return res.status(400).json({ error: 'Nenhuma parcela foi paga anteriormente' }) 
+            return res.status(400).json({ error: 'Nenhuma parcela foi paga anteriormente' })
         }
     } catch (error) {
-        console.error('Erro ao retornar parcela:', error) 
-        res.status(500).json({ error: 'Erro interno do servidor' }) 
+        console.error('Erro ao retornar parcela:', error)
+        res.status(500).json({ error: 'Erro interno do servidor' })
     }
-}) 
+})
 
 
 // 
@@ -409,7 +409,7 @@ router.patch('/faturas/:id_usuario/:id_fatura', async (req, res) => {
 })
 
 // Rota para marcar uma compra específica como quitada
-router.patch('/faturas/:id_usuario/:id_fatura/:id_compra', async (req, res) => {
+router.patch('/faturas/:id_usuario/:id_fatura/:id_compra/quitada', async (req, res) => {
     const idUsuario = req.params.id_usuario
     const idFatura = req.params.id_fatura
     const idCompra = req.params.id_compra
@@ -449,5 +449,6 @@ router.patch('/faturas/:id_usuario/:id_fatura/:id_compra', async (req, res) => {
         res.status(500).json({ error: 'Erro interno do servidor ao marcar compra como quitada.' })
     }
 })
+
 
 module.exports = router

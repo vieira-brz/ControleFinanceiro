@@ -9,7 +9,7 @@ function Header() {
       <div className="profile">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQc0_MD3bH1uwc7le9pgriZUQ5NqIXohjDO_aDYh6TJmJFpkfNq0sKfaK9AnLBSAQvIiwM&usqp=CAU" />
         <div className="info">
-          <h3>John Doe</h3>
+          <h3>Vinícius Braz</h3>
           <small>Renda mensal: <strong>R$4.000</strong></small>
         </div>
       </div>

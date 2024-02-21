@@ -83,36 +83,47 @@ function Faturas() {
   const adicionarAFatura = async () => {
     try {
       if (!faturaDoMesSelecionado) {
+        if (descricao === '' || valorTotal === '') {
+          alert('Você deve preencher a descrição e o valor da compra!');
 
-        // Se a fatura do mês/ano selecionado não existir, criar uma nova fatura
-        await axios.post(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2`, {
-          mes: mesAno,
-          compras: [{
-            dataHora: new Date(),
-            descricao: descricao,
-            instituicaoFinanceira: instituicaoFinanceira,
-            valor: parseFloat(valorTotal)
-          }]
-        })
+        } else {
+          // Se a fatura do mês/ano selecionado não existir, criar uma nova fatura
+          await axios.post(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2`, {
+            mes: mesAno,
+            compras: [{
+              dataHora: new Date(),
+              descricao: descricao,
+              instituicaoFinanceira: instituicaoFinanceira,
+              valor: parseFloat(valorTotal)
+            }]
+          })
 
+          // Limpar os campos após o envio bem-sucedido
+          alert('Compra adicionada à fatura com sucesso!')
+          navigate(-1)
+        }
       } else {
+        if (descricao === '' || valorTotal === '') {
+          alert('Você deve preencher a descrição e o valor da compra!');
 
-        // Se existir, adicionar a compra à fatura existente
-        await axios.patch(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}`, {
-          compras: [...faturaDoMesSelecionado.compras, {
-            descricao: descricao,
-            instituicaoFinanceira: instituicaoFinanceira,
-            valor: parseFloat(valorTotal)
-          }]
-        })
+        } else {
+
+          // Se existir, adicionar a compra à fatura existente
+          await axios.patch(`${API_URL}/financas/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}`, {
+            compras: [...faturaDoMesSelecionado.compras, {
+              descricao: descricao,
+              instituicaoFinanceira: instituicaoFinanceira,
+              valor: parseFloat(valorTotal)
+            }]
+          })
+        }
+
+        // Limpar os campos após o envio bem-sucedido
+        alert('Compra adicionada à fatura com sucesso!')
+        navigate(-1)
       }
-
-      // Limpar os campos após o envio bem-sucedido
-      alert('Compra adicionada à fatura com sucesso!')
-      navigate(-1)
-
     } catch (error) {
-      console.error('Erro ao adicionar compra à fatura:', error)
+      console.error(error);
       alert('Erro ao adicionar compra à fatura. Verifique o console para mais detalhes.')
     }
   }
@@ -120,11 +131,14 @@ function Faturas() {
   // Função para marcar uma compra como quitada
   const marcarCompraQuitada = async (idCompra) => {
     try {
-      await axios.patch(`${API_URL}/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}/${idCompra}`)
+      await axios.patch(`${API_URL}/faturas/65c65c76d0b4582cd7b211b2/${faturaDoMesSelecionado._id}/${idCompra}/quitada`)
 
       // Atualize a fatura após marcar a compra como quitada
-      fetchFaturaDoMes()
+      const compra = faturaDoMesSelecionado.compras.find(compra => compra._id.toString() === idCompra)
+      compra.quitada = true
 
+      document.getElementById(`quitar-${idCompra}`).closest('td').innerHTML = '<span>Fatura quitada</span>'
+      
       alert('Compra marcada como quitada com sucesso!')
 
     } catch (error) {
@@ -211,7 +225,7 @@ function Faturas() {
                     {compra.quitada ? (
                       <span>Fatura quitada</span>
                     ) : (
-                      <button onClick={() => marcarCompraQuitada(compra._id)}>Quitar fatura</button>
+                      <button id={`quitar-${compra._id}`} onClick={() => marcarCompraQuitada(compra._id)}>Quitar fatura</button>
                     )}
                   </td>
                 </tr>
