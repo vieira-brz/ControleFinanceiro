@@ -6,11 +6,21 @@ async function apiGet(endpoint) {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`);
         if (!response.ok) {
-            throw new Error(`Erro ao obter dados: ${response.statusText}`);
+            throw new Error(`Erro ao obter dados de ${endpoint}: ${response.status} ${response.statusText}`);
         }
-        return await response.json();
+
+        // Tenta converter a resposta em JSON
+        try {
+            const response_text = await response.json();
+            return response_text; // Retorna os dados JSON
+            
+        } catch (jsonError) {
+            console.error(`Erro ao converter resposta em JSON: ${jsonError}`);
+            return null; // Retorna null se houver erro na conversão
+        }
     } catch (error) {
         console.error("Erro no GET:", error);
+        return null; // Retorna null em caso de erro na requisição
     }
 }
 

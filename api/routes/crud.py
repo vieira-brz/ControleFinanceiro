@@ -37,7 +37,6 @@ def delete_categoria(db: Session, categoria_id: int):
     db.delete(db_categoria)
     db.commit()
 
-
 # Transacao CRUD
 def create_transacao(db: Session, transacao: schemas.TransacaoCreate):
     if not transacao.data_hora:
@@ -73,7 +72,6 @@ def delete_transacao(db: Session, transacao_id: int):
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     db.delete(db_transacao)
     db.commit()
-
 
 # Fatura CRUD
 def create_fatura(db: Session, fatura: schemas.FaturaCreate):

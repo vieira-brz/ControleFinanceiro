@@ -54,7 +54,10 @@ def create_transacao(transacao: schemas.TransacaoCreate, db: Session = Depends(g
 
 @app.get("/transacoes/", response_model=List[schemas.Transacao])
 def read_transacoes(db: Session = Depends(get_db)):
-    return crud.get_transacoes(db)
+    try:
+        return crud.get_transacoes(db)
+    except Exception as e:
+        return []
 
 @app.put("/transacoes/{transacao_id}", response_model=schemas.Transacao)
 def update_transacao(transacao_id: int, transacao: schemas.TransacaoUpdate, db: Session = Depends(get_db)):
