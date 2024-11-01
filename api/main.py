@@ -6,6 +6,7 @@ from schemas import schemas
 from routes import crud
 from database import engine, get_db
 from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
 import os
 from typing import List
 
@@ -24,6 +25,9 @@ app.add_middleware(
     allow_methods=["*"],   # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],   # Permite todos os headers
 )
+
+# Serve arquivos estáticos
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 # Teste de funcionamento da API
 @app.get('/')
