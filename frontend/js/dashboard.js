@@ -110,7 +110,7 @@ async function carregarHistorico(pagina) {
     historicoCorpo.innerHTML = "";  // Limpa o conteúdo atual
 
     try {
-        const transacoes = await apiGet("/transacoes");
+        const transacoes = await apiGet("/transacoes/");
         
         transacoes.forEach(transacao => {
             const linha = document.createElement("tr");
