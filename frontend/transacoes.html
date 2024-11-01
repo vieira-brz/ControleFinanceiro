@@ -122,7 +122,7 @@
 
             // Função para preencher o select de categorias
             async function loadCategorias() {
-                categorias = await apiGet("/categorias/");
+                categorias = await apiGet("/categorias");
                 const categoriaSelect = document.getElementById("categoria_id");
                 categoriaSelect.innerHTML = ""; // Limpa o conteúdo
 

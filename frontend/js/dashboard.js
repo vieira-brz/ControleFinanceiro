@@ -154,7 +154,7 @@ async function carregarFaturas() {
     const faturasCorpo = document.getElementById("faturas-corpo");
     faturasCorpo.innerHTML = "";  // Limpa o conteúdo atual
 
-    const transacoes = await apiGet("/transacoes/");
+    const transacoes = await apiGet("/transacoes");
     
     const faturas = {}; // Um objeto para agrupar faturas por mês e ano
 
