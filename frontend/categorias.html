@@ -64,26 +64,39 @@
                 const categoriasContainer = document.getElementById("categorias-container");
                 categoriasContainer.innerHTML = ""; // Limpa o conteúdo
 
-                const categorias = await apiGet("/categorias/");
-                
-                categorias.forEach(categoria => {
-                    const categoriaItem = document.createElement("div");
-                    categoriaItem.classList.add("categoria-item");
+                try {
+                    const categorias = await apiGet("/categorias/");
 
-                    if (categoria.tipo == 'despesa') {
-                        categoriaItem.classList.add("despesa");
-                    } else {
-                        categoriaItem.classList.add("receita");
+                    if (!categorias || categorias.length === 0) {
+                        categoriasContainer.innerHTML = "<p>Nenhuma categoria encontrada.</p>";
+                        return;
                     }
 
-                    categoriaItem.innerHTML = `
-                        <p><strong>Nome:</strong> ${categoria.nome}</p>
-                        <p><strong>Tipo:</strong> ${categoria.tipo.charAt(0).toUpperCase() + categoria.tipo.slice(1).toLowerCase()}</p>
-                        <div class="buttons"><button onclick="editCategoria(${categoria.id}, '${categoria.nome}', '${categoria.tipo}')">Editar</button>
-                        <button onclick="deleteCategoria(${categoria.id})">Deletar</button></div>
-                    `;
-                    categoriasContainer.appendChild(categoriaItem);
-                });
+                    categorias.forEach(categoria => {
+                        const categoriaItem = document.createElement("div");
+                        categoriaItem.classList.add("categoria-item");
+
+                        // Adiciona uma classe com base no tipo
+                        if (categoria.tipo === 'despesa') {
+                            categoriaItem.classList.add("despesa");
+                        } else {
+                            categoriaItem.classList.add("receita");
+                        }
+
+                        categoriaItem.innerHTML = `
+                <p><strong>Nome:</strong> ${categoria.nome}</p>
+                <p><strong>Tipo:</strong> ${categoria.tipo.charAt(0).toUpperCase() + categoria.tipo.slice(1).toLowerCase()}</p>
+                <div class="buttons">
+                    <button onclick="editCategoria(${categoria.id}, '${categoria.nome}', '${categoria.tipo}')">Editar</button>
+                    <button onclick="deleteCategoria(${categoria.id})">Deletar</button>
+                </div>
+            `;
+                        categoriasContainer.appendChild(categoriaItem);
+                    });
+                } catch (error) {
+                    console.error("Erro ao buscar categorias:", error);
+                    categoriasContainer.innerHTML = "<p>Ocorreu um erro ao carregar as categorias.</p>";
+                }
             }
 
             // Função para cadastrar nova categoria
@@ -100,13 +113,13 @@
             });
 
             // Função para deletar uma categoria
-            window.deleteCategoria = async function(id) {
+            window.deleteCategoria = async function (id) {
                 await apiDelete(`/categorias/${id}`);
                 renderCategorias(); // Atualiza a lista após a exclusão
             }
 
             // Função para editar uma categoria
-            window.editCategoria = async function(id, nome, tipo) {
+            window.editCategoria = async function (id, nome, tipo) {
                 document.getElementById("nome").value = nome;
                 document.getElementById("tipo").value = tipo;
 
