@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - Transações</title>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header>
+        <h3>Controle Financeiro - Transações</h3>
+        <nav id="responsive-menu">
+            <a href="index.html">Dashboard</a>
+            <a href="categorias.html">Categorias</a>
+            <a href="parcelas.html">Parcelas</a>
+        </nav>
+    </header>
+    <div class="forms-container">
+        <!-- Formulário para criação de nova transação -->
+        <div class="forms-crud">
+            <h2>Nova Transação</h2>
+            <form id="transacao-form">
+                <div class="field-group">
+                    <label for="tipo">Tipo:</label>
+                    <select id="tipo" name="tipo" required>
+                        <option value="débito">Débito</option>
+                        <option value="crédito">Crédito</option>
+                        <option value="pix">PIX</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="valor">Valor:</label>
+                    <input type="number" step="0.01" id="valor" name="valor" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="data_hora">Data e Hora:</label>
+                    <input type="datetime-local" id="data_hora" name="data_hora" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="remetente">Remetente:</label>
+                    <input type="text" id="remetente" name="remetente">
+                </div>
+
+                <div class="field-group">
+                    <label for="destinatario">Destinatário:</label>
+                    <input type="text" id="destinatario" name="destinatario">
+                </div>
+
+                <div class="field-group">
+                    <label for="descricao">Descrição:</label>
+                    <input type="text" id="descricao" name="descricao">
+                </div>
+
+                <div class="field-group">
+                    <label for="categoria_id">ID da Categoria:</label>
+                    <input type="number" id="categoria_id" name="categoria_id" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="parcelas">Parcelas:</label>
+                    <input type="number" id="parcelas" name="parcelas" value="1" min="1">
+                </div>
+
+                <div class="field-group">
+                    <label for="fatura_id">ID da Fatura:</label>
+                    <input type="number" id="fatura_id" name="fatura_id">
+                </div>
+
+                <div class="field-group">
+                    <label for="fixa">Fixa:</label>
+                    <select id="fixa" name="fixa">
+                        <option value="false">Não</option>
+                        <option value="true">Sim</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="encerrada">Encerrada:</label>
+                    <select id="encerrada" name="encerrada">
+                        <option value="false">Não</option>
+                        <option value="true">Sim</option>
+                    </select>
+                </div>
+
+                <button type="submit">Cadastrar Transação</button>
+            </form>
+        </div>
+
+        <!-- Lista de transações existentes -->
+        <section id="transacoes-list-section">
+            <h2>Transações Existentes</h2>
+            <div id="transacoes-container">
+                <!-- As transações existentes serão preenchidas aqui -->
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Controle Financeiro</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/menu.js"></script>
+    <script type="module">
+        import { apiGet, apiPost, apiPut, apiDelete } from './js/api.js';
+
+        // Função para renderizar as transações existentes
+        async function renderTransacoes() {
+            const transacoesContainer = document.getElementById("transacoes-container");
+            transacoesContainer.innerHTML = ""; // Limpa o conteúdo
+
+            const transacoes = await apiGet("/transacoes/");
+            transacoes.forEach(transacao => {
+                const transacaoItem = document.createElement("div");
+                transacaoItem.classList.add("transacao-item");
+                transacaoItem.innerHTML = `
+                    <p><strong>Tipo:</strong> ${transacao.tipo}</p>
+                    <p><strong>Valor:</strong> R$ ${transacao.valor}</p>
+                    <p><strong>Data e Hora:</strong> ${transacao.data_hora}</p>
+                    <p><strong>Remetente:</strong> ${transacao.remetente}</p>
+                    <p><strong>Destinatário:</strong> ${transacao.destinatario}</p>
+                    <p><strong>Descrição:</strong> ${transacao.descricao}</p>
+                    <p><strong>Categoria ID:</strong> ${transacao.categoria_id}</p>
+                    <p><strong>Parcelas:</strong> ${transacao.parcelas}</p>
+                    <p><strong>Fatura ID:</strong> ${transacao.fatura_id}</p>
+                    <p><strong>Fixa:</strong> ${transacao.fixa ? "Sim" : "Não"}</p>
+                    <p><strong>Encerrada:</strong> ${transacao.encerrada ? "Sim" : "Não"}</p>
+                    <button onclick="editTransacao(${transacao.id}, '${transacao.tipo}', ${transacao.valor}, '${transacao.data_hora}', '${transacao.remetente}', '${transacao.destinatario}', '${transacao.descricao}', ${transacao.categoria_id}, ${transacao.parcelas}, ${transacao.fatura_id}, ${transacao.fixa}, ${transacao.encerrada})">Editar</button>
+                    <button onclick="deleteTransacao(${transacao.id})">Deletar</button>
+                `;
+                transacoesContainer.appendChild(transacaoItem);
+            });
+        }
+
+        // Função para cadastrar nova transação
+        document.getElementById("transacao-form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const novaTransacao = {
+                tipo: document.getElementById("tipo").value,
+                valor: parseFloat(document.getElementById("valor").value),
+                data_hora: document.getElementById("data_hora").value,
+                remetente: document.getElementById("remetente").value,
+                destinatario: document.getElementById("destinatario").value,
+                descricao: document.getElementById("descricao").value,
+                categoria_id: parseInt(document.getElementById("categoria_id").value),
+                parcelas: parseInt(document.getElementById("parcelas").value),
+                fatura_id: parseInt(document.getElementById("fatura_id").value),
+                fixa: document.getElementById("fixa").value === "true",
+                encerrada: document.getElementById("encerrada").value === "true"
+            };
+
+            await apiPost("/transacoes/", novaTransacao);
+            renderTransacoes(); // Atualiza a lista de transações
+            e.target.reset(); // Limpa o formulário
+        });
+
+        // Função para deletar uma transação
+        async function deleteTransacao(id) {
+            await apiDelete(`/transacoes/${id}`);
+            renderTransacoes(); // Atualiza a lista após a exclusão
+        }
+
+        // Função para editar uma transação
+        async function editTransacao(id, tipo, valor, data_hora, remetente, destinatario, descricao, categoria_id, parcelas, fatura_id, fixa, encerrada) {
+            document.getElementById("tipo").value = tipo;
+            document.getElementById("valor").value = valor;
+            document.getElementById("data_hora").value = data_hora;
+            document.getElementById("remetente").value = remetente;
+            document.getElementById("destinatario").value = destinatario;
+            document.getElementById("descricao").value = descricao;
+            document.getElementById("categoria_id").value = categoria_id;
+            document.getElementById("parcelas").value = parcelas;
+            document.getElementById("fatura_id").value = fatura_id;
+            document.getElementById("fixa").value = fixa.toString();
+            document.getElementById("encerrada").value = encerrada.toString();
+
+            document.getElementById("transacao-form").onsubmit = async function (e) {
+                e.preventDefault();
+                const transacaoAtualizada = {
+                    tipo: document.getElementById("tipo").value,
+                    valor: parseFloat(document.getElementById("valor").value),
+                    data_hora: document.getElementById("data_hora").value,
+                    remetente: document.getElementById("remetente").value,
+                    destinatario: document.getElementById("destinatario").value,
+                    descricao: document.getElementById("descricao").value,
+                    categoria_id: parseInt(document.getElementById("categoria_id").value),
+                    parcelas: parseInt(document.getElementById("parcelas").value),
+                    fatura_id: parseInt(document.getElementById("fatura_id").value),
+                    fixa: document.getElementById("fixa").value === "true",
+                    encerrada: document.getElementById("encerrada").value === "true"
+                };
+                await apiPut(`/transacoes/${id}`, transacaoAtualizada);
+                renderTransacoes(); // Atualiza a lista após a edição
+                e.target.reset(); // Limpa o formulário
+                document.getElementById("transacao-form").onsubmit = createTransacao; // Restaura o formulário ao modo de criação
+            };
+        }
+
+        // Carrega as transações ao carregar a página
+        document.addEventListener("DOMContentLoaded", renderTransacoes);
+    </script>
+</body>
+
+</html>

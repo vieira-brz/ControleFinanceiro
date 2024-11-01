@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - Categorias</title>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header>
+        <h3>Controle Financeiro - Categorias</h3>
+        <nav id="responsive-menu">
+            <a href="index.html">Dashboard</a>
+            <a href="transacoes.html">Transações</a>
+            <a href="parcelas.html">Parcelas</a>
+        </nav>
+    </header>
+
+    <div class="forms-container">
+        <div class="forms-crud">
+            <h2>Nova Categoria</h2>
+            <form id="categoria-form">
+                <div class="field-group">
+                    <label for="nome">Nome:</label>
+                    <input type="text" id="nome" name="nome" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="tipo">Tipo:</label>
+                    <select id="tipo" name="tipo" required>
+                        <option value="despesa">Despesa</option>
+                        <option value="receita">Receita</option>
+                    </select>
+                </div>
+
+                <button type="submit">Cadastrar Categoria</button>
+            </form>
+        </div>
+
+        <!-- Lista de categorias existentes -->
+        <section id="categorias-list-section">
+            <h2>Categorias Existentes</h2>
+            <div id="categorias-container">
+                <!-- As categorias existentes serão preenchidas aqui -->
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Controle Financeiro</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { apiGet, apiPost, apiPut, apiDelete } from './js/api.js';
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Função para renderizar as categorias existentes
+            async function renderCategorias() {
+                const categoriasContainer = document.getElementById("categorias-container");
+                categoriasContainer.innerHTML = ""; // Limpa o conteúdo
+
+                const categorias = await apiGet("/categorias/");
+                
+                categorias.forEach(categoria => {
+                    const categoriaItem = document.createElement("div");
+                    categoriaItem.classList.add("categoria-item");
+
+                    if (categoria.tipo == 'despesa') {
+                        categoriaItem.classList.add("despesa");
+                    } else {
+                        categoriaItem.classList.add("receita");
+                    }
+
+                    categoriaItem.innerHTML = `
+                        <p><strong>Nome:</strong> ${categoria.nome}</p>
+                        <p><strong>Tipo:</strong> ${categoria.tipo.charAt(0).toUpperCase() + categoria.tipo.slice(1).toLowerCase()}</p>
+                        <div class="buttons"><button onclick="editCategoria(${categoria.id}, '${categoria.nome}', '${categoria.tipo}')">Editar</button>
+                        <button onclick="deleteCategoria(${categoria.id})">Deletar</button></div>
+                    `;
+                    categoriasContainer.appendChild(categoriaItem);
+                });
+            }
+
+            // Função para cadastrar nova categoria
+            document.getElementById("categoria-form").addEventListener("submit", async function (e) {
+                e.preventDefault();
+
+                const nome = document.getElementById("nome").value;
+                const tipo = document.getElementById("tipo").value;
+                const novaCategoria = { nome, tipo };
+
+                await apiPost("/categorias/", novaCategoria);
+                renderCategorias(); // Atualiza a lista de categorias
+                e.target.reset(); // Limpa o formulário
+            });
+
+            // Função para deletar uma categoria
+            window.deleteCategoria = async function(id) {
+                await apiDelete(`/categorias/${id}`);
+                renderCategorias(); // Atualiza a lista após a exclusão
+            }
+
+            // Função para editar uma categoria
+            window.editCategoria = async function(id, nome, tipo) {
+                document.getElementById("nome").value = nome;
+                document.getElementById("tipo").value = tipo;
+
+                document.getElementById("categoria-form").onsubmit = async function (e) {
+                    e.preventDefault();
+                    const categoriaAtualizada = {
+                        nome: document.getElementById("nome").value,
+                        tipo: document.getElementById("tipo").value
+                    };
+                    await apiPut(`/categorias/${id}`, categoriaAtualizada);
+                    renderCategorias(); // Atualiza a lista após a edição
+                    e.target.reset(); // Limpa o formulário
+                };
+            }
+
+            // Carrega as categorias ao carregar a página
+            renderCategorias();
+        });
+    </script>
+</body>
+
+</html>

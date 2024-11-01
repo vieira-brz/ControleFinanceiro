@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - Dashboard</title>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.3.3/dist/echarts.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <h3>Controle Financeiro - Dashboard</h3>
+        <nav id="responsive-menu">
+            <a href="categorias.html">Categorias</a>
+            <a href="transacoes.html">Transações</a>
+            <a href="parcelas.html">Parcelas</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="dashboard">
+            <!-- Gráficos -->
+            <div id="grafico-receita-despesa" class="chart-container"></div>
+            <div id="grafico-maiores-gastos" class="chart-container"></div>
+        </section>
+
+        <!-- Histórico Mensal com Paginação -->
+        <section id="historico-mensal">
+            <h2>Histórico Mensal de Receitas e Despesas</h2>
+            <div class="table-container">
+                <table id="historico-tabela">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historico-corpo">
+                        <!-- As linhas serão preenchidas pelo JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginacao">
+                <button id="anterior" disabled>Anterior</button>
+                <span id="pagina-atual">Página 1</span>
+                <button id="proximo">Próximo</button>
+            </div>
+        </section>
+
+        <!-- Faturas Atuais e Futuras -->
+        <section id="faturas">
+            <h2>Faturas</h2>
+            <div class="table-container">
+                <table id="faturas-tabela">
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Ano</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faturas-corpo">
+                        <!-- As linhas serão preenchidas pelo JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Controle Financeiro</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/menu.js"></script>
+</body>
+
+</html>

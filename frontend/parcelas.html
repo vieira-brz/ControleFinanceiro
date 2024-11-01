@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - Parcelas</title>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h3>Controle Financeiro - Parcelas</h3>
+        <nav id="responsive-menu">
+            <a href="index.html">Dashboard</a>
+            <a href="categorias.html">Categorias</a>
+            <a href="transacoes.html">Transações</a>
+        </nav>
+    </header>
+
+    <div class="forms-container">
+        <div class="forms-crud">
+            <h2>Nova Parcela</h2>
+            <form>
+                <div class="field-group">
+                    <label for="id-transacao">ID da Transação:</label>
+                    <input type="text" id="id-transacao" name="id-transacao">
+                </div>
+                <div class="field-group">
+                    <label for="data-parcela">Data da Parcela:</label>
+                    <input type="date" id="data-parcela" name="data-parcela">
+                </div>
+                <div class="field-group">
+                    <label for="valor-parcela">Valor da Parcela:</label>
+                    <input type="number" id="valor-parcela" name="valor-parcela">
+                </div>
+                <div class="field-group">
+                    <label for="id-fatura">ID da Fatura:</label>
+                    <input type="text" id="id-fatura" name="id-fatura">
+                </div>
+                <div class="field-group">
+                    <label for="encerrada">Encerrada:</label>
+                    <select id="encerrada" name="encerrada">
+                        <option value="nao">Não</option>
+                        <option value="sim">Sim</option>
+                    </select>
+                </div>
+                <button type="submit">Cadastrar Parcela</button>
+            </form>
+        </div>        
+    
+        <!-- Lista de parcelas existentes -->
+        <section id="parcelas-list-section">
+            <h2>Parcelas Existentes</h2>
+            <div id="parcelas-container">
+                <!-- As parcelas existentes serão preenchidas aqui -->
+            </div>
+        </section>
+    </div>     
+
+    <footer>
+        <p>&copy; 2024 Controle Financeiro</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/menu.js"></script>
+    <script type="module">
+        import { apiGet, apiPost, apiPut, apiDelete } from './js/api.js';
+
+        // Função para renderizar as parcelas existentes
+        async function renderParcelas() {
+            const parcelasContainer = document.getElementById("parcelas-container");
+            parcelasContainer.innerHTML = ""; // Limpa o conteúdo
+
+            const parcelas = await apiGet("/parcelas/");
+            parcelas.forEach(parcela => {
+                const parcelaItem = document.createElement("div");
+                parcelaItem.classList.add("parcela-item");
+                parcelaItem.innerHTML = `
+                    <p><strong>ID Transação:</strong> ${parcela.transacao_id}</p>
+                    <p><strong>Data da Parcela:</strong> ${parcela.data_parcela}</p>
+                    <p><strong>Valor:</strong> R$ ${parcela.valor_parcela}</p>
+                    <p><strong>ID Fatura:</strong> ${parcela.fatura_id}</p>
+                    <p><strong>Encerrada:</strong> ${parcela.encerrada ? "Sim" : "Não"}</p>
+                    <button onclick="editParcela(${parcela.id}, ${parcela.transacao_id}, '${parcela.data_parcela}', ${parcela.valor_parcela}, ${parcela.fatura_id}, ${parcela.encerrada})">Editar</button>
+                    <button onclick="deleteParcela(${parcela.id})">Deletar</button>
+                `;
+                parcelasContainer.appendChild(parcelaItem);
+            });
+        }
+
+        // Função para cadastrar nova parcela
+        document.getElementById("parcela-form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const transacao_id = document.getElementById("transacao_id").value;
+            const data_parcela = document.getElementById("data_parcela").value;
+            const valor_parcela = parseFloat(document.getElementById("valor_parcela").value);
+            const fatura_id = document.getElementById("fatura_id").value;
+            const encerrada = document.getElementById("encerrada").value === "true";
+
+            const novaParcela = { transacao_id, data_parcela, valor_parcela, fatura_id, encerrada };
+
+            await apiPost("/parcelas/", novaParcela);
+            renderParcelas(); // Atualiza a lista de parcelas
+            e.target.reset(); // Limpa o formulário
+        });
+
+        // Função para deletar uma parcela
+        async function deleteParcela(id) {
+            await apiDelete(`/parcelas/${id}`);
+            renderParcelas(); // Atualiza a lista após a exclusão
+        }
+
+        // Função para editar uma parcela
+        async function editParcela(id, transacao_id, data_parcela, valor_parcela, fatura_id, encerrada) {
+            document.getElementById("transacao_id").value = transacao_id;
+            document.getElementById("data_parcela").value = data_parcela;
+            document.getElementById("valor_parcela").value = valor_parcela;
+            document.getElementById("fatura_id").value = fatura_id;
+            document.getElementById("encerrada").value = encerrada.toString();
+
+            document.getElementById("parcela-form").onsubmit = async function (e) {
+                e.preventDefault();
+                const parcelaAtualizada = {
+                    transacao_id: document.getElementById("transacao_id").value,
+                    data_parcela: document.getElementById("data_parcela").value,
+                    valor_parcela: parseFloat(document.getElementById("valor_parcela").value),
+                    fatura_id: document.getElementById("fatura_id").value,
+                    encerrada: document.getElementById("encerrada").value === "true"
+                };
+                await apiPut(`/parcelas/${id}`, parcelaAtualizada);
+                renderParcelas(); // Atualiza a lista após a edição
+                e.target.reset(); // Limpa o formulário
+                document.getElementById("parcela-form").onsubmit = createParcela; // Restaura o formulário ao modo de criação
+            };
+        }
+
+        // Carrega as parcelas ao carregar a página
+        document.addEventListener("DOMContentLoaded", renderParcelas);
+    </script>
+</body>
+</html>

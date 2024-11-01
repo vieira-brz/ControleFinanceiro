@@ -1,0 +1,354 @@
+/* Reset e configuração básica */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    color: #4d4d4d;
+    text-decoration: none;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    display: flex;
+    min-width: 100vw;
+    min-height: 100vh;
+    flex-direction: column;
+    background-color: #f0f2f5;
+}
+
+/* Cabeçalho */
+header {
+    display: flex;
+    padding: 20px;
+    font-weight: bold;
+    background: white;
+    place-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#responsive-menu {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+#responsive-menu a {
+    color: #4d4d4d;
+    overflow: hidden;
+    padding: 8px 16px;
+    position: relative;
+    transition: 0.3s ease;
+}
+
+#responsive-menu a::after {
+    content: '';
+    position: absolute;
+    bottom: 5%;
+    left: 15%;
+    width: 70%;
+    height: 2px;
+    background-color: #007bff;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+#responsive-menu a:hover {
+    color: #007bff;
+}
+
+#responsive-menu a:hover::after {
+    transform: scaleX(1);
+}
+
+/* Layout Principal */
+main {
+    gap: 20px;
+    width: 100%;
+    display: grid;
+    padding: 0 10px;
+    margin: 30px auto;
+    /* max-width: 1400px; */
+    grid-template-columns: 1fr;
+}
+
+/* Dashboard Section */
+#dashboard {
+    gap: 20px;
+    width: 100%;
+    display: grid;
+    grid-column: span 2;
+    grid-template-columns: repeat(auto-fit, minmax(48vw, 1fr));
+}
+
+/* Estilos de Gráficos */
+.chart-container {
+    padding: 20px;
+    height: 45vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Histórico Mensal e Faturas */
+#historico-mensal, #faturas {
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 15px;
+}
+
+#historico-mensal h2, #faturas h2 {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#historico-tabela, #faturas-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#historico-tabela th, #historico-tabela td,
+#faturas-tabela th, #faturas-tabela td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#historico-tabela th, #faturas-tabela th {
+    background-color: #333;
+    color: white;
+    font-weight: bold;
+}
+
+#historico-tabela tr:nth-child(even), 
+#faturas-tabela tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Paginação */
+#paginacao {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#paginacao button {
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#paginacao button:disabled {
+    background-color: #ddd;
+    cursor: not-allowed;
+}
+
+#paginacao button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+#pagina-atual {
+    font-weight: bold;
+    align-self: center;
+}
+
+/* Footer */
+footer {
+    bottom: 0;
+    width: 100vw;
+    padding: 15px;
+    position: fixed;
+    font-size: 0.9em;
+    text-align: center;
+    background-color: #333;
+}
+
+footer p {
+    color: lightgray;
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+
+    #dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    #historico-mensal, #faturas {
+        grid-column: span 1;
+    }
+
+    #responsive-menu {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media (max-width: 768px) {
+    #responsive-menu a {
+        padding: 8px 16px;
+        width: 100%;
+        text-align: center;
+    }
+
+    #historico-mensal h2, #faturas h2 {
+        font-size: 1.2em;
+    }
+
+    #paginacao button {
+        padding: 8px 10px;
+        font-size: 0.8em;
+    }
+}
+
+
+.forms-container {
+    gap: 20px; /* Espaçamento entre os componentes */
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 20% 78%;
+}
+
+@media (max-width: 600px) {
+    .forms-container {
+        display: flex;
+        flex-direction: column; /* Muda para coluna em telas menores */
+    }
+}
+
+.forms-crud {
+    padding: 25px;
+    border-radius: 12px;
+    height: fit-content;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.forms-crud h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.field-group {
+    margin-bottom: 15px;
+}
+
+.field-group label {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 15px;
+}
+
+.field-group input[type="text"],
+.field-group input[type="number"],
+.field-group input[type="date"],
+.field-group input[type="datetime-local"],
+.field-group select {
+    padding: 12px;
+    font-size: 1em;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+    width: 100%; /* Para ocupar toda a largura */
+}
+
+.field-group input:focus,
+.field-group select:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+.forms-crud button {
+    padding: 14px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: white;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%; /* Botão ocupa toda a largura */
+}
+
+.forms-crud button:hover {
+    background-color: #45a049;
+}
+
+/* CATEGORIAS */
+#categorias-list-section {
+    padding: 25px;
+    border-radius: 12px;
+}
+
+#categorias-list-section h2 {
+    margin-bottom: 20px;
+}
+
+#categorias-list-section  #categorias-container {
+    gap: 20px;
+    display: grid;
+    justify-content: space-between;
+    grid-template-columns: repeat(5, 19%);
+}
+
+#categorias-list-section  #categorias-container .categoria-item {
+    gap: 10px;
+    padding: 15px;
+    display: flex;
+    border-radius: 5px;
+    background: white;
+    flex-direction: column;
+    border-left: 3px solid #4CAF50;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#categorias-list-section  #categorias-container .categoria-item.despesa {
+    border-left: 3px solid red;
+}
+
+#categorias-list-section  #categorias-container .categoria-item .buttons {
+    gap: 12px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 48% 48%;
+}
+
+#categorias-list-section  #categorias-container .categoria-item .buttons button {
+    border: none;
+    padding: 5px;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: .2s ease;
+    background-color: #4CAF50;
+}
+
+#categorias-list-section  #categorias-container .categoria-item .buttons button:nth-child(2) {
+    background-color: #ff6262;
+}
+
+#categorias-list-section  #categorias-container .categoria-item .buttons button:hover {
+    background-color: #45a049;
+}
+
+#categorias-list-section  #categorias-container .categoria-item .buttons button:nth-child(2):hover {
+    background-color: #f84040;
+}
+
+

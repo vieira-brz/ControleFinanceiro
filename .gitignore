@@ -1,0 +1,14 @@
+# Ignorar arquivos de ambiente
+.env
+
+# Ignorar dependências do Node.js
+node_modules/
+
+# Ignorar diretórios de build
+dist/
+
+# Ignorar arquivos de log
+*.log
+
+# Ignorar diretórios de cache do Python
+__pycache__/
