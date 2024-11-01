@@ -5,9 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle Financeiro - Transações</title>
-
-    <!-- Estilos -->
     <link rel="stylesheet" href="css/styles.css">
+    <script>
+        // Função para formatar o valor como moeda brasileira
+        function formatarValor(input) {
+            // Remove qualquer caractere que não seja número
+            let value = input.value.replace(/\D/g, '');
+
+            // Se houver valor, formata
+            if (value) {
+                value = (parseFloat(value) / 100).toFixed(2); // Converte para decimal
+                input.value = value.replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); // Formatação
+            } else {
+                input.value = ''; // Reseta o campo se não houver valor
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -19,8 +32,8 @@
             <a href="parcelas.html">Parcelas</a>
         </nav>
     </header>
+
     <div class="forms-container">
-        <!-- Formulário para criação de nova transação -->
         <div class="forms-crud">
             <h2>Nova Transação</h2>
             <form id="transacao-form">
@@ -35,12 +48,8 @@
 
                 <div class="field-group">
                     <label for="valor">Valor:</label>
-                    <input type="number" step="0.01" id="valor" name="valor" required>
-                </div>
-
-                <div class="field-group">
-                    <label for="data_hora">Data e Hora:</label>
-                    <input type="datetime-local" id="data_hora" name="data_hora" required>
+                    <input type="text" id="valor" name="valor" placeholder="R$ 0,00" required
+                        oninput="formatarValor(this)">
                 </div>
 
                 <div class="field-group">
@@ -59,18 +68,15 @@
                 </div>
 
                 <div class="field-group">
-                    <label for="categoria_id">ID da Categoria:</label>
-                    <input type="number" id="categoria_id" name="categoria_id" required>
+                    <label for="categoria_id">Categoria:</label>
+                    <select id="categoria_id" name="categoria_id" required>
+                        <!-- As categorias existentes serão preenchidas aqui -->
+                    </select>
                 </div>
 
                 <div class="field-group">
                     <label for="parcelas">Parcelas:</label>
-                    <input type="number" id="parcelas" name="parcelas" value="1" min="1">
-                </div>
-
-                <div class="field-group">
-                    <label for="fatura_id">ID da Fatura:</label>
-                    <input type="number" id="fatura_id" name="fatura_id">
+                    <input type="number" id="parcelas" name="parcelas" value="1" min="0" required>
                 </div>
 
                 <div class="field-group">
@@ -107,106 +113,87 @@
     </footer>
 
     <!-- Scripts -->
-    <script type="module" src="js/main.js"></script>
-    <script type="module" src="js/menu.js"></script>
+    <script type="module" src="js/api.js"></script>
     <script type="module">
-        import { apiGet, apiPost, apiPut, apiDelete } from './js/api.js';
+        import { apiGet, apiPost } from './js/api.js';
 
-        // Função para renderizar as transações existentes
-        async function renderTransacoes() {
-            const transacoesContainer = document.getElementById("transacoes-container");
-            transacoesContainer.innerHTML = ""; // Limpa o conteúdo
+        document.addEventListener("DOMContentLoaded", async () => {
+            var categorias = []
 
-            const transacoes = await apiGet("/transacoes/");
-            transacoes.forEach(transacao => {
-                const transacaoItem = document.createElement("div");
-                transacaoItem.classList.add("transacao-item");
-                transacaoItem.innerHTML = `
-                    <p><strong>Tipo:</strong> ${transacao.tipo}</p>
-                    <p><strong>Valor:</strong> R$ ${transacao.valor}</p>
-                    <p><strong>Data e Hora:</strong> ${transacao.data_hora}</p>
-                    <p><strong>Remetente:</strong> ${transacao.remetente}</p>
-                    <p><strong>Destinatário:</strong> ${transacao.destinatario}</p>
-                    <p><strong>Descrição:</strong> ${transacao.descricao}</p>
-                    <p><strong>Categoria ID:</strong> ${transacao.categoria_id}</p>
-                    <p><strong>Parcelas:</strong> ${transacao.parcelas}</p>
-                    <p><strong>Fatura ID:</strong> ${transacao.fatura_id}</p>
-                    <p><strong>Fixa:</strong> ${transacao.fixa ? "Sim" : "Não"}</p>
-                    <p><strong>Encerrada:</strong> ${transacao.encerrada ? "Sim" : "Não"}</p>
-                    <button onclick="editTransacao(${transacao.id}, '${transacao.tipo}', ${transacao.valor}, '${transacao.data_hora}', '${transacao.remetente}', '${transacao.destinatario}', '${transacao.descricao}', ${transacao.categoria_id}, ${transacao.parcelas}, ${transacao.fatura_id}, ${transacao.fixa}, ${transacao.encerrada})">Editar</button>
-                    <button onclick="deleteTransacao(${transacao.id})">Deletar</button>
-                `;
-                transacoesContainer.appendChild(transacaoItem);
-            });
-        }
+            // Função para preencher o select de categorias
+            async function loadCategorias() {
+                categorias = await apiGet("/categorias/");
+                const categoriaSelect = document.getElementById("categoria_id");
+                categoriaSelect.innerHTML = ""; // Limpa o conteúdo
 
-        // Função para cadastrar nova transação
-        document.getElementById("transacao-form").addEventListener("submit", async function (e) {
-            e.preventDefault();
+                categorias.sort((a, b) => a.nome.localeCompare(b.nome));
 
-            const novaTransacao = {
-                tipo: document.getElementById("tipo").value,
-                valor: parseFloat(document.getElementById("valor").value),
-                data_hora: document.getElementById("data_hora").value,
-                remetente: document.getElementById("remetente").value,
-                destinatario: document.getElementById("destinatario").value,
-                descricao: document.getElementById("descricao").value,
-                categoria_id: parseInt(document.getElementById("categoria_id").value),
-                parcelas: parseInt(document.getElementById("parcelas").value),
-                fatura_id: parseInt(document.getElementById("fatura_id").value),
-                fixa: document.getElementById("fixa").value === "true",
-                encerrada: document.getElementById("encerrada").value === "true"
-            };
+                categorias.forEach(categoria => {
+                    const option = document.createElement("option");
+                    option.value = categoria.id;
+                    option.textContent = categoria.nome; // Exibe o nome da categoria
+                    categoriaSelect.appendChild(option);
+                });
+            }
 
-            await apiPost("/transacoes/", novaTransacao);
-            renderTransacoes(); // Atualiza a lista de transações
-            e.target.reset(); // Limpa o formulário
-        });
-
-        // Função para deletar uma transação
-        async function deleteTransacao(id) {
-            await apiDelete(`/transacoes/${id}`);
-            renderTransacoes(); // Atualiza a lista após a exclusão
-        }
-
-        // Função para editar uma transação
-        async function editTransacao(id, tipo, valor, data_hora, remetente, destinatario, descricao, categoria_id, parcelas, fatura_id, fixa, encerrada) {
-            document.getElementById("tipo").value = tipo;
-            document.getElementById("valor").value = valor;
-            document.getElementById("data_hora").value = data_hora;
-            document.getElementById("remetente").value = remetente;
-            document.getElementById("destinatario").value = destinatario;
-            document.getElementById("descricao").value = descricao;
-            document.getElementById("categoria_id").value = categoria_id;
-            document.getElementById("parcelas").value = parcelas;
-            document.getElementById("fatura_id").value = fatura_id;
-            document.getElementById("fixa").value = fixa.toString();
-            document.getElementById("encerrada").value = encerrada.toString();
-
-            document.getElementById("transacao-form").onsubmit = async function (e) {
+            // Função para cadastrar nova transação
+            document.getElementById("transacao-form").addEventListener("submit", async function (e) {
                 e.preventDefault();
-                const transacaoAtualizada = {
+
+                const valorInput = document.getElementById("valor");
+                const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.')); // Formatação do valor
+
+                const novaTransacao = {
                     tipo: document.getElementById("tipo").value,
-                    valor: parseFloat(document.getElementById("valor").value),
-                    data_hora: document.getElementById("data_hora").value,
+                    valor: valor,
+                    data_hora: new Date().toISOString(), // Pega a data atual
                     remetente: document.getElementById("remetente").value,
                     destinatario: document.getElementById("destinatario").value,
                     descricao: document.getElementById("descricao").value,
                     categoria_id: parseInt(document.getElementById("categoria_id").value),
-                    parcelas: parseInt(document.getElementById("parcelas").value),
-                    fatura_id: parseInt(document.getElementById("fatura_id").value),
+                    parcelas: document.getElementById("tipo").value === 'débito' ? 0 : document.getElementById("parcelas").value,
                     fixa: document.getElementById("fixa").value === "true",
-                    encerrada: document.getElementById("encerrada").value === "true"
+                    encerrada: document.getElementById("encerrada").value === "false" // Default é "Não"
                 };
-                await apiPut(`/transacoes/${id}`, transacaoAtualizada);
-                renderTransacoes(); // Atualiza a lista após a edição
-                e.target.reset(); // Limpa o formulário
-                document.getElementById("transacao-form").onsubmit = createTransacao; // Restaura o formulário ao modo de criação
-            };
-        }
 
-        // Carrega as transações ao carregar a página
-        document.addEventListener("DOMContentLoaded", renderTransacoes);
+                await apiPost("/transacoes/", novaTransacao);
+                await renderTransacoes(); // Atualiza a lista de transações
+                e.target.reset(); // Limpa o formulário
+            });
+
+            // Função para renderizar as transações existentes
+            async function renderTransacoes() {
+                const transacoesContainer = document.getElementById("transacoes-container");
+                transacoesContainer.innerHTML = ""; // Limpa o conteúdo
+
+                const transacoes = await apiGet("/transacoes/");
+                transacoes.forEach(transacao => {
+                    const transacaoItem = document.createElement("div");
+                    transacaoItem.classList.add("transacao-item");
+                    transacaoItem.innerHTML = `
+                        <p><strong>Tipo:</strong> ${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</p>
+                        <p><strong>Valor:</strong> R$ ${transacao.valor.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Data e Hora:</strong> ${new Date(transacao.data_hora).toLocaleString('pt-BR').replace(',', ' às')}</p>
+                        <p><strong>Remetente:</strong> ${transacao.remetente}</p>
+                        <p><strong>Destinatário:</strong> ${transacao.destinatario}</p>
+                        <p><strong>Descrição:</strong> ${transacao.descricao}</p>
+                        <p><strong>Categoria:</strong> ${categorias.filter(value => value.id === transacao.categoria_id)[0]?.nome || 'Desconhecida'}</p>
+                        <p><strong>Parcelas:</strong> ${transacao.parcelas == 0 ? "Sem parcelamento." : transacao.parcelas == 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</p>
+                        <p><strong>Fixa:</strong> ${transacao.fixa ? "Sim" : "Não"}</p>
+                        <p><strong>Encerrada:</strong> ${transacao.encerrada ? "Sim" : "Não"}</p>
+                        <div class="buttons">
+                            <button onclick="editTransacao(${transacao.id})">Editar</button>
+                            <button onclick="deleteTransacao(${transacao.id})">Deletar</button>
+                        </div>
+                    `;
+                    transacoesContainer.appendChild(transacaoItem);
+                });
+            }
+
+            // Carrega categorias e transações ao carregar a página
+            await loadCategorias();
+            await renderTransacoes();
+        });
     </script>
 </body>
 

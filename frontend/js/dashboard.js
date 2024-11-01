@@ -102,51 +102,119 @@ function renderGraficoMaioresGastos() {
     myChart.setOption(option);
 }
 
-
 // Função para carregar o histórico com paginação
 let paginaAtual = 1;
+
 async function carregarHistorico(pagina) {
     const historicoCorpo = document.getElementById("historico-corpo");
     historicoCorpo.innerHTML = "";  // Limpa o conteúdo atual
-    const historico = await apiGet(`/transacoes?pagina=${pagina}`);
 
-    historico.transacoes.forEach(transacao => {
-        const linha = document.createElement("tr");
-        linha.innerHTML = `
-            <td>${transacao.data_hora}</td>
-            <td>${transacao.tipo}</td>
-            <td>${transacao.descricao}</td>
-            <td>${transacao.categoria}</td>
-            <td>R$ ${transacao.valor}</td>
-        `;
-        historicoCorpo.appendChild(linha);
-    });
+    try {
+        const transacoes = await apiGet("/transacoes");
+        
+        transacoes.forEach(transacao => {
+            const linha = document.createElement("tr");
+            linha.innerHTML = `
+                <td>${new Date(transacao.data_hora).toLocaleString('pt-BR')}</td>
+                <td>${transacao.tipo}</td>
+                <td>${transacao.descricao}</td>
+                <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
+                <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
+            `;
+            historicoCorpo.appendChild(linha);
+        });
 
-    // Atualiza os botões de paginação
-    document.getElementById("pagina-atual").innerText = `Página ${pagina}`;
-    document.getElementById("anterior").disabled = pagina <= 1;
-    document.getElementById("proximo").disabled = !historico.temMaisPaginas;
-    paginaAtual = pagina;
+        // Atualiza os botões de paginação
+        document.getElementById("pagina-atual").innerText = `Página ${pagina}`;
+        document.getElementById("anterior").disabled = pagina <= 1;
+        // Desative o botão próximo dependendo se há mais páginas
+        document.getElementById("proximo").disabled = false; // Ajuste conforme necessário
+    } catch (error) {
+        console.error("Erro ao carregar o histórico:", error);
+    }
 }
-
-document.getElementById("anterior").addEventListener("click", () => carregarHistorico(paginaAtual - 1));
-document.getElementById("proximo").addEventListener("click", () => carregarHistorico(paginaAtual + 1));
 
 // Função para carregar as faturas
 async function carregarFaturas() {
+    const meses = {
+        1: 'Janeiro',
+        2: 'Fevereiro',
+        3: 'Março',
+        4: 'Abril',
+        5: 'Maio',
+        6: 'Junho',
+        7: 'Julho',
+        8: 'Agosto',
+        9: 'Setembro',
+        10: 'Outubro',
+        11: 'Novembro',
+        12: 'Dezembro',
+    };
+
     const faturasCorpo = document.getElementById("faturas-corpo");
     faturasCorpo.innerHTML = "";  // Limpa o conteúdo atual
-    const faturas = await apiGet("/faturas/");
 
-    faturas.forEach(fatura => {
+    const transacoes = await apiGet("/transacoes/");
+    
+    const faturas = {}; // Um objeto para agrupar faturas por mês e ano
+
+    // Obtenha o mês atual e o ano atual
+    const dataAtual = new Date();
+    const mesAtual = dataAtual.getMonth() + 1; // Mês em formato 1-12
+    const anoAtual = dataAtual.getFullYear();
+
+    // Agrupar transações por mês e ano
+    transacoes.forEach(transacao => {
+        const dataTransacao = new Date(transacao.data_hora);
+        const mesTransacao = dataTransacao.getMonth() + 1; // Mês em formato 1-12
+        const anoTransacao = dataTransacao.getFullYear();
+
+        // Lógica para lidar com parcelas
+        if (transacao.parcelas > 0) {
+            for (let i = 0; i < transacao.parcelas; i++) {
+                let mesParcela = mesTransacao + i;
+                let anoParcela = anoTransacao;
+
+                if (mesParcela > 12) {
+                    mesParcela -= 12;
+                    anoParcela++;
+                }
+
+                const chaveFatura = `${mesParcela}-${anoParcela}`;
+                if (!faturas[chaveFatura]) {
+                    faturas[chaveFatura] = {
+                        mes: mesParcela,
+                        ano: anoParcela,
+                        total: 0
+                    };
+                }
+
+                faturas[chaveFatura].total += transacao.valor / transacao.parcelas; // Divide o valor pelas parcelas
+            }
+        } else {
+            const chaveFatura = `${mesTransacao}-${anoTransacao}`;
+            if (!faturas[chaveFatura]) {
+                faturas[chaveFatura] = {
+                    mes: mesTransacao,
+                    ano: anoTransacao,
+                    total: 0
+                };
+            }
+            faturas[chaveFatura].total += transacao.valor;
+        }
+    });
+
+    // Adiciona as faturas no DOM
+    for (const key in faturas) {
+        const fatura = faturas[key];
         const linha = document.createElement("tr");
         linha.innerHTML = `
-            <td>${fatura.mes}</td>
+            <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>
             <td>${fatura.ano}</td>
-            <td>R$ ${fatura.total}</td>
+            <td>R$ ${fatura.total.toFixed(2).replace('.', ',')}</td>
         `;
         faturasCorpo.appendChild(linha);
-    });
+    }
 }
 
 // Inicializa os gráficos e dados ao carregar a página
@@ -155,4 +223,15 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGraficoMaioresGastos();
     carregarHistorico(paginaAtual);
     carregarFaturas();
+
+    // Adiciona os eventos de clique para os botões de paginação
+    document.getElementById("anterior").addEventListener("click", () => {
+        if (paginaAtual > 1) {
+            carregarHistorico(--paginaAtual);
+        }
+    });
+
+    document.getElementById("proximo").addEventListener("click", () => {
+        carregarHistorico(++paginaAtual);
+    });
 });
