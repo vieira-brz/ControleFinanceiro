@@ -156,7 +156,7 @@
                     encerrada: document.getElementById("encerrada").value === "false" // Default é "Não"
                 };
 
-                await apiPost("/transacoes/", novaTransacao);
+                await apiPost("/transacoes", novaTransacao);
                 await renderTransacoes(); // Atualiza a lista de transações
                 e.target.reset(); // Limpa o formulário
             });
@@ -166,7 +166,7 @@
                 const transacoesContainer = document.getElementById("transacoes-container");
                 transacoesContainer.innerHTML = ""; // Limpa o conteúdo
 
-                const transacoes = await apiGet("/transacoes/");
+                const transacoes = await apiGet("/transacoes");
                 transacoes.forEach(transacao => {
                     const transacaoItem = document.createElement("div");
                     transacaoItem.classList.add("transacao-item");
