@@ -37,3 +37,8 @@ Este projeto é uma aplicação web para controle financeiro, permitindo o cadas
 ## Contribuição
 
 Sinta-se à vontade para contribuir com o projeto, sugerindo melhorias ou reportando problemas. Todas as contribuições são bem-vindas!
+
+##### Outros
+
+Pra configurar a api do vercel: vercel . 
+Pra rodar em prod (se pedir): vercel --prod
