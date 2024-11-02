@@ -27,9 +27,8 @@ class Transacao(Base):
     categoria_id = Column(Integer, ForeignKey("categorias.id"))
     parcelas = Column(Integer, default=1)
     parcela_atual = Column(Integer, default=1)
-    fatura_id = Column(Integer, ForeignKey("faturas.id"))
-    fixa = Column(Boolean, default=False)  # Indica se a transação é fixa
-    encerrada = Column(Boolean, default=False)  # Indica se a transação foi encerrada
+    fixa = Column(Boolean, default=False)  
+    encerrada = Column(Boolean, default=False)  
 
 class Parcela(Base):
     __tablename__ = "parcelas"
@@ -37,5 +36,4 @@ class Parcela(Base):
     transacao_id = Column(Integer, ForeignKey("transacoes.id"))
     data_parcela = Column(DateTime)
     valor_parcela = Column(DECIMAL(10, 2), nullable=False)
-    fatura_id = Column(Integer, ForeignKey("faturas.id"))
     encerrada = Column(Boolean, default=False)  # Indica se a parcela foi encerrada

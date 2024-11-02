@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle Financeiro - Transações</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script type="module" src="js/api.js"></script>
     <script>
         // Função para formatar o valor como moeda brasileira
         function formatarValor(input) {
@@ -19,6 +20,62 @@
             } else {
                 input.value = ''; // Reseta o campo se não houver valor
             }
+        }
+
+        // Função para deletar uma transação
+        async function deleteTransacao(id) {
+            const confirmDelete = confirm("Tem certeza que deseja deletar esta transação?");
+            if (confirmDelete) {
+                try {
+                    await apiDelete(`/transacoes/${id}`);
+                    alert("Transação deletada com sucesso.");
+                    await renderTransacoes(); // Atualiza a lista de transações
+                } catch (error) {
+                    console.error("Erro ao deletar transação:", error);
+                    alert("Erro ao deletar a transação.");
+                }
+            }
+        }
+
+        // Função para editar uma transação
+        async function editTransacao(id) {
+            const transacao = await apiGet(`/transacoes/${id}`); // Carrega a transação a ser editada
+
+            // Preenche o formulário com os dados da transação
+            document.getElementById("tipo").value = transacao.tipo;
+            document.getElementById("valor").value = (transacao.valor).toFixed(2).replace('.', ',');
+            document.getElementById("remetente").value = transacao.remetente;
+            document.getElementById("destinatario").value = transacao.destinatario;
+            document.getElementById("descricao").value = transacao.descricao;
+            document.getElementById("categoria_id").value = transacao.categoria_id;
+            document.getElementById("parcelas").value = transacao.parcelas;
+            document.getElementById("fixa").value = transacao.fixa.toString();
+            document.getElementById("encerrada").value = transacao.encerrada.toString();
+
+            // Altera o botão para atualizar em vez de criar
+            const form = document.getElementById("transacao-form");
+            form.onsubmit = async function (e) {
+                e.preventDefault();
+                const valorInput = document.getElementById("valor");
+                const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.')); // Formatação do valor
+
+                await apiPut(`/transacoes/${id}`, {
+                    tipo: document.getElementById("tipo").value,
+                    valor: valor,
+                    remetente: document.getElementById("remetente").value,
+                    destinatario: document.getElementById("destinatario").value,
+                    descricao: document.getElementById("descricao").value,
+                    categoria_id: parseInt(document.getElementById("categoria_id").value),
+                    parcelas: document.getElementById("parcelas").value,
+                    fixa: document.getElementById("fixa").value === "true",
+                    encerrada: document.getElementById("encerrada").value === "true"
+                });
+
+                alert("Transação atualizada com sucesso.");
+                await renderTransacoes(); // Atualiza a lista de transações
+                form.reset(); // Limpa o formulário
+                form.onsubmit = null; // Remove a função de edição
+            };
         }
     </script>
 </head>
@@ -113,9 +170,8 @@
     </footer>
 
     <!-- Scripts -->
-    <script type="module" src="js/api.js"></script>
     <script type="module">
-        import { apiGet, apiPost } from './js/api.js';
+        import { apiGet, apiPost, apiDelete } from './js/api.js';
 
         document.addEventListener("DOMContentLoaded", async () => {
             var categorias = []
@@ -151,10 +207,10 @@
                     destinatario: document.getElementById("destinatario").value,
                     descricao: document.getElementById("descricao").value,
                     categoria_id: parseInt(document.getElementById("categoria_id").value),
-                    parcelas: document.getElementById("tipo").value === 'débito' ? 0 : document.getElementById("parcelas").value,
+                    parcelas: document.getElementById("tipo").value === 'débito' ? 0 : parseInt(document.getElementById("parcelas").value),
                     fixa: document.getElementById("fixa").value === "true",
                     encerrada: document.getElementById("encerrada").value === "false" // Default é "Não"
-                };
+                };                
 
                 await apiPost("/transacoes/", novaTransacao);
                 await renderTransacoes(); // Atualiza a lista de transações
@@ -188,62 +244,6 @@
                     `;
                     transacoesContainer.appendChild(transacaoItem);
                 });
-            }
-
-            // Função para deletar uma transação
-            async function deleteTransacao(id) {
-                const confirmDelete = confirm("Tem certeza que deseja deletar esta transação?");
-                if (confirmDelete) {
-                    try {
-                        await apiDelete(`/transacoes/${id}`);
-                        alert("Transação deletada com sucesso.");
-                        await renderTransacoes(); // Atualiza a lista de transações
-                    } catch (error) {
-                        console.error("Erro ao deletar transação:", error);
-                        alert("Erro ao deletar a transação.");
-                    }
-                }
-            }
-
-            // Função para editar uma transação
-            async function editTransacao(id) {
-                const transacao = await apiGet(`/transacoes/${id}`); // Carrega a transação a ser editada
-
-                // Preenche o formulário com os dados da transação
-                document.getElementById("tipo").value = transacao.tipo;
-                document.getElementById("valor").value = (transacao.valor / 100).toFixed(2).replace('.', ',');
-                document.getElementById("remetente").value = transacao.remetente;
-                document.getElementById("destinatario").value = transacao.destinatario;
-                document.getElementById("descricao").value = transacao.descricao;
-                document.getElementById("categoria_id").value = transacao.categoria_id;
-                document.getElementById("parcelas").value = transacao.parcelas;
-                document.getElementById("fixa").value = transacao.fixa.toString();
-                document.getElementById("encerrada").value = transacao.encerrada.toString();
-
-                // Altera o botão para atualizar em vez de criar
-                const form = document.getElementById("transacao-form");
-                form.onsubmit = async function (e) {
-                    e.preventDefault();
-                    const valorInput = document.getElementById("valor");
-                    const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.')); // Formatação do valor
-
-                    await apiPut(`/transacoes/${id}`, {
-                        tipo: document.getElementById("tipo").value,
-                        valor: valor,
-                        remetente: document.getElementById("remetente").value,
-                        destinatario: document.getElementById("destinatario").value,
-                        descricao: document.getElementById("descricao").value,
-                        categoria_id: parseInt(document.getElementById("categoria_id").value),
-                        parcelas: document.getElementById("parcelas").value,
-                        fixa: document.getElementById("fixa").value === "true",
-                        encerrada: document.getElementById("encerrada").value === "true"
-                    });
-
-                    alert("Transação atualizada com sucesso.");
-                    await renderTransacoes(); // Atualiza a lista de transações
-                    form.reset(); // Limpa o formulário
-                    form.onsubmit = null; // Remove a função de edição
-                };
             }
 
             // Carrega categorias e transações ao carregar a página

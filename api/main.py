@@ -68,24 +68,6 @@ def delete_transacao(transacao_id: int, db: Session = Depends(get_db)):
     crud.delete_transacao(db, transacao_id=transacao_id)
     return {"message": "Transação deletada com sucesso"}
 
-# Rotas para Fatura
-@app.post("/faturas/", response_model=schemas.Fatura)
-def create_fatura(fatura: schemas.FaturaCreate, db: Session = Depends(get_db)):
-    return crud.create_fatura(db=db, fatura=fatura)
-
-@app.get("/faturas/", response_model=List[schemas.Fatura])
-def read_faturas(db: Session = Depends(get_db)):
-    return crud.get_faturas(db)
-
-@app.put("/faturas/{fatura_id}", response_model=schemas.Fatura)
-def update_fatura(fatura_id: int, fatura: schemas.FaturaUpdate, db: Session = Depends(get_db)):
-    return crud.update_fatura(db=db, fatura_id=fatura_id, fatura=fatura)
-
-@app.delete("/faturas/{fatura_id}")
-def delete_fatura(fatura_id: int, db: Session = Depends(get_db)):
-    crud.delete_fatura(db, fatura_id=fatura_id)
-    return {"message": "Fatura deletada com sucesso"}
-
 # Rotas para Parcela
 @app.post("/parcelas/", response_model=schemas.Parcela)
 def create_parcela(parcela: schemas.ParcelaCreate, db: Session = Depends(get_db)):

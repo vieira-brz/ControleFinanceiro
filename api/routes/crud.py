@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from models import models
 from schemas import schemas
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
 # Categoria CRUD
@@ -41,11 +42,16 @@ def delete_categoria(db: Session, categoria_id: int):
 def create_transacao(db: Session, transacao: schemas.TransacaoCreate):
     if not transacao.data_hora:
         transacao.data_hora = datetime.utcnow()
+
+    categoria = db.query(models.Categoria).filter(models.Categoria.id == transacao.categoria_id).first()
+    if not categoria:
+        raise HTTPException(status_code=400, detail="Categoria não encontrada.")
+
     db_transacao = models.Transacao(**transacao.dict())
     db.add(db_transacao)
     db.commit()
-    db.refresh(db_transacao)
-    return db_transacao
+    db.refresh(db_transacao)  # Isso garante que o campo `id` seja preenchido
+    return db_transacao  # Certifique-se de que db_transacao contém o `id`
 
 def update_transacao(db: Session, transacao_id: int, transacao: schemas.TransacaoUpdate):
     db_transacao = db.query(models.Transacao).filter(models.Transacao.id == transacao_id).first()
@@ -73,47 +79,6 @@ def delete_transacao(db: Session, transacao_id: int):
     db.delete(db_transacao)
     db.commit()
 
-# Fatura CRUD
-def create_fatura(db: Session, fatura: schemas.FaturaCreate):
-    existing_fatura = db.query(models.Fatura).filter(
-        models.Fatura.mes == fatura.mes,
-        models.Fatura.ano == fatura.ano
-    ).first()
-    if existing_fatura:
-        raise HTTPException(status_code=400, detail="Fatura para este mês e ano já existe")
-    db_fatura = models.Fatura(**fatura.dict())
-    db.add(db_fatura)
-    db.commit()
-    db.refresh(db_fatura)
-    return db_fatura
-
-def update_fatura(db: Session, fatura_id: int, fatura: schemas.FaturaUpdate):
-    db_fatura = db.query(models.Fatura).filter(models.Fatura.id == fatura_id).first()
-    if not db_fatura:
-        raise HTTPException(status_code=404, detail="Fatura não encontrada")
-    
-    if fatura.mes is not None:
-        db_fatura.mes = fatura.mes
-    if fatura.ano is not None:
-        db_fatura.ano = fatura.ano
-    if fatura.total is not None:
-        db_fatura.total = fatura.total
-    
-    db.commit()
-    db.refresh(db_fatura)
-    return db_fatura
-
-def get_faturas(db: Session):
-    return db.query(models.Fatura).all()
-
-def delete_fatura(db: Session, fatura_id: int):
-    db_fatura = db.query(models.Fatura).filter(models.Fatura.id == fatura_id).first()
-    if not db_fatura:
-        raise HTTPException(status_code=404, detail="Fatura não encontrada")
-    db.delete(db_fatura)
-    db.commit()
-
-
 # Parcela CRUD
 def create_parcela(db: Session, parcela: schemas.ParcelaCreate):
     transacao = db.query(models.Transacao).filter(models.Transacao.id == parcela.transacao_id).first()
@@ -128,7 +93,6 @@ def create_parcela(db: Session, parcela: schemas.ParcelaCreate):
         transacao_id=parcela.transacao_id,
         data_parcela=parcela.data_parcela,
         valor_parcela=valor_parcela,
-        fatura_id=parcela.fatura_id,
         encerrada=parcela.encerrada
     )
     db.add(db_parcela)
@@ -147,8 +111,6 @@ def update_parcela(db: Session, parcela_id: int, parcela: schemas.ParcelaUpdate)
         db_parcela.data_parcela = parcela.data_parcela
     if parcela.valor_parcela is not None:
         db_parcela.valor_parcela = parcela.valor_parcela
-    if parcela.fatura_id is not None:
-        db_parcela.fatura_id = parcela.fatura_id
     
     if parcela.encerrada is not None:
         db_parcela.encerrada = parcela.encerrada

@@ -53,7 +53,6 @@ class TransacaoBase(BaseModel):
     categoria_id: int
     parcelas: int = 1
     parcela_atual: int = 1
-    fatura_id: Optional[int] = None
     fixa: bool = False
     encerrada: bool = False
 
@@ -70,7 +69,6 @@ class TransacaoUpdate(BaseModel):
     categoria_id: Optional[int] = None
     parcelas: Optional[int] = None
     parcela_atual: Optional[int] = None
-    fatura_id: Optional[int] = None
     fixa: Optional[bool] = None
     encerrada: Optional[bool] = None
 
@@ -86,7 +84,6 @@ class ParcelaBase(BaseModel):
     transacao_id: int
     data_parcela: datetime
     valor_parcela: float
-    fatura_id: int
     encerrada: bool = False
 
 class ParcelaCreate(ParcelaBase):
@@ -96,7 +93,6 @@ class ParcelaUpdate(BaseModel):
     transacao_id: Optional[int] = None
     data_parcela: Optional[datetime] = None
     valor_parcela: Optional[float] = None
-    fatura_id: Optional[int] = None
     encerrada: Optional[bool] = None
 
 class Parcela(ParcelaBase):

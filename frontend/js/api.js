@@ -13,7 +13,7 @@ async function apiGet(endpoint) {
         try {
             const response_text = await response.json();
             return response_text; // Retorna os dados JSON
-            
+
         } catch (jsonError) {
             console.error(`Erro ao converter resposta em JSON: ${jsonError}`);
             return null; // Retorna null se houver erro na conversão
@@ -24,22 +24,26 @@ async function apiGet(endpoint) {
     }
 }
 
-// Função POST genérica para enviar dados
+// Função para realizar uma requisição POST
 async function apiPost(endpoint, data) {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
         });
+
         if (!response.ok) {
-            throw new Error(`Erro ao enviar dados: ${response.statusText}`);
+            throw new Error(`Erro ao enviar dados: ${response.status} ${response.statusText}`);
         }
-        return await response.json();
+
+        const responseData = await response.json();
+        return responseData; // Retorna os dados da resposta
     } catch (error) {
         console.error("Erro no POST:", error);
+        throw error; // Lança o erro para ser tratado em outro lugar
     }
 }
 
