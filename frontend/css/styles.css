@@ -107,7 +107,8 @@ main {
     justify-content: space-between;
 }
 
-#historico-mensal, #faturas {
+#historico-mensal,
+#faturas {
     padding: 20px;
     border-radius: 15px;
 }
@@ -120,30 +121,36 @@ main {
     width: 50%;
 }
 
-#historico-mensal .table-container, #faturas .table-container {
+#historico-mensal .table-container,
+#faturas .table-container {
     height: 400px;
     overflow: auto;
 }
 
-#historico-mensal h2, #faturas h2 {
+#historico-mensal h2,
+#faturas h2 {
     margin-bottom: 15px;
     text-align: center;
 }
 
-#historico-tabela, #faturas-tabela {
+#historico-tabela,
+#faturas-tabela {
     width: 100%;
     margin-top: 10px;
     border-collapse: collapse;
 }
 
-#historico-tabela th, #historico-tabela td,
-#faturas-tabela th, #faturas-tabela td {
+#historico-tabela th,
+#historico-tabela td,
+#faturas-tabela th,
+#faturas-tabela td {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
 }
 
-#historico-tabela th, #faturas-tabela th {
+#historico-tabela th,
+#faturas-tabela th {
     top: 0;
     color: white;
     position: sticky;
@@ -151,7 +158,7 @@ main {
     background-color: #333;
 }
 
-#historico-tabela tr:nth-child(even), 
+#historico-tabela tr:nth-child(even),
 #faturas-tabela tr:nth-child(even) {
     background-color: #f9f9f9;
 }
@@ -188,12 +195,12 @@ footer p {
 }
 
 @media (max-width: 768px) {
-    body > header {
+    body>header {
         display: flex;
         flex-direction: column;
     }
 
-    body > header > button {
+    body>header>button {
         display: none !important;
     }
 
@@ -209,25 +216,39 @@ footer p {
         width: 100%;
     }
 
+    #categorias-list-section #categorias-container {
+        gap: 20px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+    }
+
+    #categorias-list-section #categorias-container .categoria-item {
+        min-width: 100% !important;
+    }
+
     #responsive-menu {
         display: flex;
         flex-direction: row;
     }
-    
+
     #responsive-menu a {
         width: 100%;
         padding: 8px 16px;
         text-align: center;
     }
 
-    #historico-mensal h2, #faturas h2 {
+    #historico-mensal h2,
+    #faturas h2 {
         font-size: 1.2em;
     }
 }
 
 
 .forms-container {
-    gap: 20px; /* Espaçamento entre os componentes */
+    gap: 20px;
+    /* Espaçamento entre os componentes */
     padding: 20px;
     display: grid;
     margin-bottom: 60px;
@@ -237,7 +258,8 @@ footer p {
 @media (max-width: 600px) {
     .forms-container {
         display: flex;
-        flex-direction: column; /* Muda para coluna em telas menores */
+        flex-direction: column;
+        /* Muda para coluna em telas menores */
     }
 }
 
@@ -275,7 +297,8 @@ footer p {
     border: 1px solid #ddd;
     border-radius: 8px;
     transition: border-color 0.3s ease;
-    width: 100%; /* Para ocupar toda a largura */
+    width: 100%;
+    /* Para ocupar toda a largura */
 }
 
 .field-group input:focus,
@@ -294,7 +317,8 @@ footer p {
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    width: 100%; /* Botão ocupa toda a largura */
+    width: 100%;
+    /* Botão ocupa toda a largura */
 }
 
 .forms-crud button:hover {
@@ -311,14 +335,14 @@ footer p {
     margin-bottom: 20px;
 }
 
-#categorias-list-section  #categorias-container {
+#categorias-list-section #categorias-container {
     gap: 20px;
     display: grid;
     justify-content: space-between;
     grid-template-columns: repeat(5, 19%);
 }
 
-#categorias-list-section  #categorias-container .categoria-item {
+#categorias-list-section #categorias-container .categoria-item {
     gap: 10px;
     padding: 15px;
     display: flex;
@@ -329,18 +353,18 @@ footer p {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-#categorias-list-section  #categorias-container .categoria-item.despesa {
+#categorias-list-section #categorias-container .categoria-item.despesa {
     border-left: 3px solid red;
 }
 
-#categorias-list-section  #categorias-container .categoria-item .buttons {
+#categorias-list-section #categorias-container .categoria-item .buttons {
     gap: 12px;
     width: 100%;
     display: grid;
     grid-template-columns: 48% 48%;
 }
 
-#categorias-list-section  #categorias-container .categoria-item .buttons button {
+#categorias-list-section #categorias-container .categoria-item .buttons button {
     border: none;
     padding: 5px;
     color: white;
@@ -350,15 +374,15 @@ footer p {
     background-color: #4CAF50;
 }
 
-#categorias-list-section  #categorias-container .categoria-item .buttons button:nth-child(2) {
+#categorias-list-section #categorias-container .categoria-item .buttons button:nth-child(2) {
     background-color: #ff6262;
 }
 
-#categorias-list-section  #categorias-container .categoria-item .buttons button:hover {
+#categorias-list-section #categorias-container .categoria-item .buttons button:hover {
     background-color: #45a049;
 }
 
-#categorias-list-section  #categorias-container .categoria-item .buttons button:nth-child(2):hover {
+#categorias-list-section #categorias-container .categoria-item .buttons button:nth-child(2):hover {
     background-color: #f84040;
 }
 
@@ -372,14 +396,14 @@ footer p {
     margin-bottom: 20px;
 }
 
-#transacoes-list-section  #transacoes-container {
+#transacoes-list-section #transacoes-container {
     gap: 20px;
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    grid-template-columns: repeat(4, 24%);
 }
 
-#transacoes-list-section  #transacoes-container .transacao-item {
+#transacoes-list-section #transacoes-container .transacao-item {
     gap: 10px;
     padding: 15px;
     display: flex;
@@ -390,18 +414,18 @@ footer p {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-#transacoes-list-section  #transacoes-container .transacao-item.despesa {
+#transacoes-list-section #transacoes-container .transacao-item.despesa {
     border-left: 3px solid red;
 }
 
-#transacoes-list-section  #transacoes-container .transacao-item .buttons {
+#transacoes-list-section #transacoes-container .transacao-item .buttons {
     gap: 12px;
     width: 100%;
     display: grid;
     grid-template-columns: 48% 48%;
 }
 
-#transacoes-list-section  #transacoes-container .transacao-item .buttons button {
+#transacoes-list-section #transacoes-container .transacao-item .buttons button {
     border: none;
     padding: 5px;
     color: white;
@@ -411,17 +435,14 @@ footer p {
     background-color: #4CAF50;
 }
 
-#transacoes-list-section  #transacoes-container .transacao-item .buttons button:nth-child(2) {
+#transacoes-list-section #transacoes-container .transacao-item .buttons button:nth-child(2) {
     background-color: #ff6262;
 }
 
-#transacoes-list-section  #transacoes-container .transacao-item .buttons button:hover {
+#transacoes-list-section #transacoes-container .transacao-item .buttons button:hover {
     background-color: #45a049;
 }
 
-#transacoes-list-section  #transacoes-container .transacao-item .buttons button:nth-child(2):hover {
+#transacoes-list-section #transacoes-container .transacao-item .buttons button:nth-child(2):hover {
     background-color: #f84040;
 }
-
-
-

@@ -1,59 +1,140 @@
 import { apiGet } from './api.js';
 
-function renderGraficoReceitaDespesa() {
-    const chartDom = document.getElementById('grafico-receita-despesa');
-    const myChart = echarts.init(chartDom);
-    const option = {
-        title: { text: 'Receita vs Despesa' },
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'cross'
+async function renderGraficoReceitaDespesa() {
+    const faturas = {}; // Um objeto para agrupar faturas por mês e ano
+
+    try {
+        let ultimo_mes = 0
+
+        // Faz a requisição para obter as transações
+        const transacoes = await apiGet("/transacoes/");
+
+        // Filtra as transações fixas e calcula o total
+        const valoresFixosDespesa = transacoes
+            .filter(transaction => (transaction.fixa === true && transaction.tipo != 'receita'))
+            .reduce((total, transaction) => total + parseFloat(transaction.valor), 0);
+
+        // Agrupa transações por mês e ano
+        transacoes.forEach(transacao => {
+            const mesAtual = new Date().getMonth()
+            const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
+            const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
+
+            if (mesTransacao >= (mesAtual - 1)) {
+                const dataTransacao = new Date(transacao.data_hora); // Converte a data da transação
+
+                let diaTransacao = dataTransacao.getDate(); // Dia da transação
+                diaTransacao = diaTransacao < 9 ? `0${diaTransacao}` : diaTransacao
+
+                const mesTransacao = dataTransacao.getMonth() + 1; // Mês da transação (1-12)
+                const anoTransacao = dataTransacao.getFullYear(); // Ano da transação
+
+                const chaveFatura = `${diaTransacao}/${mesTransacao}/${anoTransacao}`; // Chave para identificar a fatura
+
+                if (!faturas[chaveFatura]) {
+                    // Inicializa a fatura se não existir
+                    faturas[chaveFatura] = {
+                        dia: diaTransacao,
+                        mes: mesTransacao,
+                        ano: anoTransacao,
+                        receita: 0,
+                        despesa: 0
+                    };
+                }
+
+                // Se a transação for fixa
+                if (transacao.fixa) {
+                    // Adiciona valores fixos à despesa se não for o mesmo mês
+                    if (ultimo_mes !== mesTransacao) {
+                        faturas[chaveFatura].despesa += valoresFixosDespesa; // Adiciona valores fixos à despesa
+
+                        // Para salário 1 no dia 15
+                        const chaveFaturaSalario1 = `15/${mesTransacao}/${anoTransacao}`;
+
+                        if (!faturas[chaveFaturaSalario1]) {
+                            const salario1 = transacoes.find(transaction => transaction.id === 31);
+                            faturas[chaveFaturaSalario1] = {
+                                dia: '15',
+                                mes: mesTransacao,
+                                ano: anoTransacao,
+                                receita: salario1 ? parseFloat(salario1.valor) : 0, // Adiciona valores fixos à receita
+                                despesa: 0
+                            };
+                        }
+
+                        // Para salário 2 no dia 28
+                        const chaveFaturaSalario2 = `28/${mesTransacao}/${anoTransacao}`;
+
+                        if (!faturas[chaveFaturaSalario2]) {
+                            const salario2 = transacoes.find(transaction => transaction.id === 32);
+                            faturas[chaveFaturaSalario2] = {
+                                dia: '28',
+                                mes: mesTransacao,
+                                ano: anoTransacao,
+                                receita: salario2 ? parseFloat(salario2.valor) : 0, // Adiciona valores fixos à receita
+                                despesa: 0
+                            };
+                        }
+                    }
+                }
+                else {
+                    // Adiciona o valor da transação à receita ou despesa
+                    if (transacao.remetente == null) { // Se não tem remetente, é uma despesa
+                        faturas[chaveFatura].despesa += parseFloat(transacao.valor / transacao.parcelas);
+                    } else { // Caso contrário, é uma receita
+                        faturas[chaveFatura].receita += parseFloat(transacao.valor / transacao.parcelas);
+                    }
+                }
+
+                ultimo_mes = mesTransacao
             }
-        },
-        legend: { data: ['Receita', 'Despesa'] },
-        xAxis: {
-            type: 'category',
-            data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        },
-        yAxis: {
-            type: 'value'
-        },
-        series: [
-            {
-                name: 'Receita',
-                type: 'line',
-                data: [500, 700, 1050, 1000, 850, 950, 1300, 1500, 1200, 1450, 1600, 2000],
-                itemStyle: {
-                    color: 'green'
-                },
-                lineStyle: {
-                    color: 'green'
-                },
-                areaStyle: {
-                    color: 'rgba(0, 128, 0, 0.05)' // Fundo verde com opacidade de 0.05
+        });
+
+        // Renderiza o gráfico com ECharts
+        const chartDom = document.getElementById('grafico-receita-despesa');
+        const myChart = echarts.init(chartDom);
+        const option = {
+            title: { text: 'Receita vs Despesa' },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross'
                 }
             },
-            {
-                name: 'Despesa',
-                type: 'line',
-                data: [400, 600, 800, 850, 750, 700, 900, 1200, 1100, 1300, 1400, 1600],
-                itemStyle: {
-                    color: 'red'
+            legend: { data: ['Receita', 'Despesa'] },
+            xAxis: {
+                type: 'category',
+                data: Object.keys(faturas).map(key => key) // Formata os dados do eixo X
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: 'Receita',
+                    type: 'line',
+                    data: Object.values(faturas).map(f => f.receita), // Usando as receitas
+                    itemStyle: { color: 'green' },
+                    lineStyle: { color: 'green' },
+                    areaStyle: { color: 'rgba(0, 128, 0, 0.05)' } // Fundo verde com opacidade
                 },
-                lineStyle: {
-                    color: 'red'
-                },
-                areaStyle: {
-                    color: 'rgba(255, 0, 0, 0.05)' // Fundo vermelho com opacidade de 0.05
+                {
+                    name: 'Despesa',
+                    type: 'line',
+                    data: Object.values(faturas).map(f => f.despesa), // Usando as despesas
+                    itemStyle: { color: 'red' },
+                    lineStyle: { color: 'red' },
+                    areaStyle: { color: 'rgba(255, 0, 0, 0.05)' } // Fundo vermelho com opacidade
                 }
-            }
-        ]
-    };
-    myChart.setOption(option);
+            ]
+        };
+        myChart.setOption(option);
+    } catch (error) {
+        console.error("Erro ao carregar as faturas:", error); // Tratamento de erro caso a requisição falhe
+    }
 }
 
-function renderGraficoMaioresGastos() {
+async function renderGraficoMaioresGastos() {
     const chartDom = document.getElementById('grafico-maiores-gastos');
     const myChart = echarts.init(chartDom);
 
@@ -70,6 +151,38 @@ function renderGraficoMaioresGastos() {
 
     const backgroundColors = colors.map(color => color.replace('1)', '0.05)'));
 
+    const categorias = await apiGet("/categorias/");
+    const transacoes = await apiGet("/transacoes/");
+
+    // Criar um objeto para armazenar o total gasto por categoria
+    const gastosPorCategoria = {};
+
+    // Inicializar o objeto com as categorias
+    categorias.forEach(categoria => {
+        gastosPorCategoria[categoria.id] = {
+            nome: categoria.nome,
+            total: 0
+        };
+    });
+
+    // Calcular o total de gastos por categoria
+    transacoes.forEach(transacao => {
+        if (transacao.categoria_id != 22) {
+            const categoriaId = transacao.categoria_id;
+            const valorPorParcela = transacao.valor / (transacao.parcelas || 1); // Considera 1 se parcelas for 0
+    
+            if (gastosPorCategoria[categoriaId]) {
+                gastosPorCategoria[categoriaId].total += valorPorParcela;
+            }
+        }
+    });
+
+    // Filtrar e mapear os dados para o gráfico
+    const data = Object.values(gastosPorCategoria)
+        .map(({ nome, total }) => ({ value: total, name: nome }))
+        .filter(item => item.value > 0); // Remove categorias sem gastos
+
+    // Configuração do gráfico
     const option = {
         title: { text: 'Maiores Gastos por Categoria', left: 'center' },
         tooltip: { trigger: 'item' },
@@ -82,13 +195,14 @@ function renderGraficoMaioresGastos() {
                 name: 'Gastos',
                 type: 'pie',
                 radius: ['45%', '60%'],
-                data: [
-                    { value: 1048, name: 'Alimentação', itemStyle: { color: colors[0], borderColor: backgroundColors[0], borderWidth: 8 } },
-                    { value: 735, name: 'Transporte', itemStyle: { color: colors[1], borderColor: backgroundColors[1], borderWidth: 8 } },
-                    { value: 580, name: 'Educação', itemStyle: { color: colors[2], borderColor: backgroundColors[2], borderWidth: 8 } },
-                    { value: 484, name: 'Lazer', itemStyle: { color: colors[3], borderColor: backgroundColors[3], borderWidth: 8 } },
-                    { value: 300, name: 'Saúde', itemStyle: { color: colors[4], borderColor: backgroundColors[4], borderWidth: 8 } }
-                ],
+                data: data.map((item, index) => ({
+                    ...item,
+                    itemStyle: {
+                        color: colors[index % colors.length],
+                        borderColor: backgroundColors[index % backgroundColors.length],
+                        borderWidth: 8
+                    }
+                })),
                 emphasis: {
                     itemStyle: {
                         border: 1,
@@ -102,6 +216,7 @@ function renderGraficoMaioresGastos() {
     myChart.setOption(option);
 }
 
+
 // Função para carregar o histórico com paginação
 async function carregarHistorico() {
     const historicoCorpo = document.getElementById("historico-corpo");
@@ -112,11 +227,11 @@ async function carregarHistorico() {
         const transacoes = await apiGet("/transacoes/");
 
         transacoes.sort((a, b) => b.data_hora.localeCompare(a.data_hora));
-        
+
         transacoes.forEach(transacao => {
             const linha = document.createElement("tr");
 
-            const mesAtual =  new Date().getMonth()
+            const mesAtual = new Date().getMonth()
             const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
             const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
 
@@ -125,7 +240,7 @@ async function carregarHistorico() {
                 linha.innerHTML = `
                     <td>${transacao.fixa ? 'Transação Fixa' : new Date(transacao.data_hora).toLocaleString('pt-BR').split(',')[0]}</td>
                     <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td>
-                    <td>${transacao.destinatario}</td>
+                    <td>${transacao.destinatario ? transacao.destinatario : 'Eu mesmo'}</td>
                     <td>${transacao.descricao}</td>
                     <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
                     <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
@@ -164,63 +279,60 @@ async function carregarFaturas() {
     try {
         // Faz a requisição para obter as transações
         const transacoes = await apiGet("/transacoes/");
-        
-        const faturas = {}; // Um objeto para agrupar faturas por mês e ano
 
-        // Obtém a data atual
-        const dataAtual = new Date();
-        const mesAtual = dataAtual.getMonth() + 1; // Mês atual (1-12)
-        const anoAtual = dataAtual.getFullYear(); // Ano atual
+        const faturas = {}; // Um objeto para agrupar faturas por mês e ano
 
         // Filtra as transações fixas
         const valores_fixos = transacoes
-            .filter(transaction => transaction.fixa === true) // Filtra transações fixas
+            .filter(transaction => (transaction.fixa === true && transaction.tipo != 'receita'))
             .reduce((total, transaction) => total + parseFloat(transaction.valor), 0); // Soma os valores fixos
 
         // Agrupa transações por mês e ano
         transacoes.forEach(transacao => {
-            const dataTransacao = new Date(transacao.data_hora); // Converte a data da transação
-            const mesTransacao = dataTransacao.getMonth() + 1; // Mês da transação (1-12)
-            const anoTransacao = dataTransacao.getFullYear(); // Ano da transação
-            
-            // Lógica para lidar com parcelas
-            if (!transacao.fixa) { // Apenas para transações não fixas
-                if (transacao.parcelas > 0) { // Verifica se há parcelas
-                    for (let i = 0; i < transacao.parcelas; i++) {
-                        let mesParcela = mesTransacao + i; // Mês da parcela
-                        let anoParcela = anoTransacao; // Ano da parcela
+            if (transacao.categoria_id != 22) { // Se não for receita, cai na fatura
+                const dataTransacao = new Date(transacao.data_hora); // Converte a data da transação
+                const mesTransacao = dataTransacao.getMonth() + 1; // Mês da transação (1-12)
+                const anoTransacao = dataTransacao.getFullYear(); // Ano da transação
 
-                        // Ajusta mês e ano se ultrapassar dezembro
-                        if (mesParcela > 12) {
-                            mesParcela -= 12;
-                            anoParcela++;
+                // Lógica para lidar com parcelas
+                if (!transacao.fixa) { // Apenas para transações não fixas
+                    if (transacao.parcelas > 0) { // Verifica se há parcelas
+                        for (let i = 0; i < transacao.parcelas; i++) {
+                            let mesParcela = mesTransacao + i; // Mês da parcela
+                            let anoParcela = anoTransacao; // Ano da parcela
+
+                            // Ajusta mês e ano se ultrapassar dezembro
+                            if (mesParcela > 12) {
+                                mesParcela -= 12;
+                                anoParcela++;
+                            }
+
+                            const chaveFatura = `${mesParcela}-${anoParcela}`; // Chave para identificar a fatura
+                            if (!faturas[chaveFatura]) {
+                                // Inicializa a fatura se não existir
+                                faturas[chaveFatura] = {
+                                    mes: mesParcela,
+                                    ano: anoParcela,
+                                    total: 0
+                                };
+                            }
+
+                            // Adiciona o valor da parcela à fatura
+                            faturas[chaveFatura].total += transacao.valor / transacao.parcelas;
                         }
-
-                        const chaveFatura = `${mesParcela}-${anoParcela}`; // Chave para identificar a fatura
+                    } else {
+                        const chaveFatura = `${mesTransacao}-${anoTransacao}`; // Chave para fatura única
                         if (!faturas[chaveFatura]) {
                             // Inicializa a fatura se não existir
                             faturas[chaveFatura] = {
-                                mes: mesParcela,
-                                ano: anoParcela,
+                                mes: mesTransacao,
+                                ano: anoTransacao,
                                 total: 0
                             };
                         }
-
-                        // Adiciona o valor da parcela à fatura
-                        faturas[chaveFatura].total += transacao.valor / transacao.parcelas;
+                        // Adiciona o valor total à fatura
+                        faturas[chaveFatura].total += transacao.valor;
                     }
-                } else {
-                    const chaveFatura = `${mesTransacao}-${anoTransacao}`; // Chave para fatura única
-                    if (!faturas[chaveFatura]) {
-                        // Inicializa a fatura se não existir
-                        faturas[chaveFatura] = {
-                            mes: mesTransacao,
-                            ano: anoTransacao,
-                            total: 0
-                        };
-                    }
-                    // Adiciona o valor total à fatura
-                    faturas[chaveFatura].total += transacao.valor;
                 }
             }
         });

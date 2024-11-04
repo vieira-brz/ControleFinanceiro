@@ -79,7 +79,6 @@
         <nav id="responsive-menu">
             <a href="index.html">Dashboard</a>
             <a href="categorias.html">Categorias</a>
-            <a href="parcelas.html">Parcelas</a>
         </nav>
     </header>
 
@@ -90,6 +89,7 @@
                 <div class="field-group">
                     <label for="tipo">Tipo:</label>
                     <select id="tipo" name="tipo" required>
+                        <option value="receita">Receita</option>
                         <option value="débito">Débito</option>
                         <option value="crédito">Crédito</option>
                         <option value="pix">PIX</option>
@@ -248,12 +248,25 @@
                 const valorInput = document.getElementById("valor");
                 const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.'));
 
+                let remetente = ''
+                let destinatario = ''
+
+                // Verifica se o tipo não é 'salário' nem 'receita'
+                if (document.getElementById("tipo").value != 'receita') {
+                    remetente = null; // Se não for receita, remetente é nulo
+                    destinatario = document.getElementById("destinatario").value; // Pega o destinatário
+
+                } else {
+                    remetente = document.getElementById("remetente").value; // Se for receita, pega o remetente
+                    destinatario = null; // Destinatário é nulo
+                }
+
                 const novaTransacao = {
                     tipo: document.getElementById("tipo").value,
                     valor: valor,
                     data_hora: new Date().toISOString(),
-                    remetente: document.getElementById("remetente").value,
-                    destinatario: document.getElementById("destinatario").value,
+                    remetente: remetente,
+                    destinatario: destinatario,
                     descricao: document.getElementById("descricao").value,
                     categoria_id: parseInt(document.getElementById("categoria_id").value),
                     parcelas: document.getElementById("tipo").value === 'débito' ? 0 : parseInt(document.getElementById("parcelas").value),
@@ -278,15 +291,20 @@
                 transacoes.forEach(transacao => {
                     const transacaoItem = document.createElement("div");
                     transacaoItem.classList.add("transacao-item");
+
+                    if (transacao.tipo != 'receita') {
+                        transacaoItem.classList.add("despesa");
+                    }
+
                     transacaoItem.innerHTML = `
                         <p><strong>Tipo:</strong> ${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</p>
                         <p><strong>Valor:</strong> R$ ${transacao.valor.toFixed(2).replace('.', ',')}</p>
                         <p><strong>Data e Hora:</strong> ${new Date(transacao.data_hora).toLocaleString('pt-BR').replace(',', ' às')}</p>
                         <p><strong>Remetente:</strong> ${transacao.remetente ? transacao.remetente : 'Eu mesmo'}</p>
-                        <p><strong>Destinatário:</strong> ${transacao.destinatario}</p>
+                        <p><strong>Destinatário:</strong> ${transacao.destinatario ? transacao.destinatario : 'Eu mesmo'}</p>
                         <p><strong>Descrição:</strong> ${transacao.descricao}</p>
                         <p><strong>Categoria:</strong> ${categorias.filter(value => value.id === transacao.categoria_id)[0]?.nome || 'Desconhecida'}</p>
-                        <p><strong>Parcelas:</strong> ${transacao.parcelas == 0 ? "Sem parcelamento." : transacao.parcelas == 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</p>
+                        <p><strong>Parcelas:</strong> ${transacao.parcelas == 0 ? "Sem parcelamento." : (transacao.parcelas == 1 && transacao.remetente == null) ? "1 parcela na fatura atual." : (transacao.parcelas == 1 && transacao.destinatario == null) ? "N/A" : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</p>
                         <p><strong>Fixa:</strong> ${transacao.fixa ? "Sim" : "Não"}</p>
                         <p><strong>Encerrada:</strong> ${transacao.encerrada ? "Sim" : "Não"}</p>
                         <div class="buttons">
