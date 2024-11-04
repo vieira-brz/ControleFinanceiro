@@ -12,14 +12,15 @@
 
 body {
     display: flex;
-    min-width: 100vw;
-    min-height: 100vh;
+    /* min-width: 100vw; */
+    /* min-height: 100vh; */
     flex-direction: column;
     background-color: #f0f2f5;
 }
 
 /* Cabeçalho */
 header {
+    width: 100%;
     display: flex;
     padding: 20px;
     font-weight: bold;
@@ -72,6 +73,7 @@ main {
     display: grid;
     padding: 0 10px;
     margin: 30px auto;
+    margin-bottom: 60px;
     /* max-width: 1400px; */
     grid-template-columns: 1fr;
 }
@@ -80,9 +82,8 @@ main {
 #dashboard {
     gap: 20px;
     width: 100%;
-    display: grid;
-    grid-column: span 2;
-    grid-template-columns: repeat(auto-fit, minmax(48vw, 1fr));
+    display: flex;
+    justify-content: space-between;
 }
 
 /* Estilos de Gráficos */
@@ -96,10 +97,29 @@ main {
 
 
 /* Histórico Mensal e Faturas */
+.flex-mobile-col {
+    gap: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
 #historico-mensal, #faturas {
     padding: 20px;
     margin-top: 20px;
     border-radius: 15px;
+}
+
+#historico-mensal {
+    width: 100%;
+}
+
+#faturas {
+    width: 50%;
+}
+
+#historico-mensal .table-container, #faturas .table-container {
+    height: 400px;
+    overflow: auto;
 }
 
 #historico-mensal h2, #faturas h2 {
@@ -109,8 +129,8 @@ main {
 
 #historico-tabela, #faturas-tabela {
     width: 100%;
-    border-collapse: collapse;
     margin-top: 10px;
+    border-collapse: collapse;
 }
 
 #historico-tabela th, #historico-tabela td,
@@ -121,46 +141,16 @@ main {
 }
 
 #historico-tabela th, #faturas-tabela th {
-    background-color: #333;
+    top: 0;
     color: white;
+    position: sticky;
     font-weight: bold;
+    background-color: #333;
 }
 
 #historico-tabela tr:nth-child(even), 
 #faturas-tabela tr:nth-child(even) {
     background-color: #f9f9f9;
-}
-
-/* Paginação */
-#paginacao {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-#paginacao button {
-    padding: 8px 12px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-#paginacao button:disabled {
-    background-color: #ddd;
-    cursor: not-allowed;
-}
-
-#paginacao button:hover:not(:disabled) {
-    background-color: #0056b3;
-}
-
-#pagina-atual {
-    font-weight: bold;
-    align-self: center;
 }
 
 /* Footer */
@@ -188,10 +178,6 @@ footer p {
         grid-template-columns: 1fr;
     }
 
-    #historico-mensal, #faturas {
-        grid-column: span 1;
-    }
-
     #responsive-menu {
         flex-direction: column;
         align-items: center;
@@ -199,6 +185,27 @@ footer p {
 }
 
 @media (max-width: 768px) {
+    body > header {
+        display: flex;
+        flex-direction: column;
+    }
+
+    body > header > nav {
+        display: flex;
+    }
+
+    .flex-mobile-col {
+        flex-direction: column;
+    }
+
+    #dashboard {
+        flex-direction: column;
+    }
+
+    #faturas {
+        width: 100%;
+    }
+
     #responsive-menu a {
         padding: 8px 16px;
         width: 100%;

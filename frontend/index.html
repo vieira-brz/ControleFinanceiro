@@ -30,50 +30,48 @@
             <div id="grafico-maiores-gastos" class="chart-container"></div>
         </section>
 
-        <!-- Histórico Mensal com Paginação -->
-        <section id="historico-mensal">
-            <h2>Histórico Mensal de Receitas e Despesas</h2>
-            <div class="table-container">
-                <table id="historico-tabela">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Tipo</th>
-                            <th>Descrição</th>
-                            <th>Categoria</th>
-                            <th>Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historico-corpo">
-                        <!-- As linhas serão preenchidas pelo JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="paginacao">
-                <button id="anterior" disabled>Anterior</button>
-                <span id="pagina-atual">Página 1</span>
-                <button id="proximo">Próximo</button>
-            </div>
-        </section>
-
         <!-- Faturas Atuais e Futuras -->
-        <section id="faturas">
-            <h2>Faturas</h2>
-            <div class="table-container">
-                <table id="faturas-tabela">
-                    <thead>
-                        <tr>
-                            <th>Mês</th>
-                            <th>Ano</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="faturas-corpo">
-                        <!-- As linhas serão preenchidas pelo JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <div class="flex-mobile-col">
+            <section id="faturas">
+                <h2>Faturas</h2>
+                <div class="table-container">
+                    <table id="faturas-tabela">
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Ano</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faturas-corpo">
+                            <!-- As linhas serão preenchidas pelo JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Histórico Mensal com Paginação -->
+            <section id="historico-mensal">
+                <h2>Histórico Mensal de Receitas e Despesas</h2>
+                <div class="table-container">
+                    <table id="historico-tabela">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                                <th>Parcelas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historico-corpo">
+                            <!-- As linhas serão preenchidas pelo JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </main>
 
     <footer>

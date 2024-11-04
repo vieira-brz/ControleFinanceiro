@@ -103,36 +103,30 @@ function renderGraficoMaioresGastos() {
 }
 
 // Função para carregar o histórico com paginação
-// let paginaAtual = 1;
+async function carregarHistorico() {
+    const historicoCorpo = document.getElementById("historico-corpo");
+    historicoCorpo.innerHTML = "";  // Limpa o conteúdo atual
 
-// async function carregarHistorico(pagina) {
-//     const historicoCorpo = document.getElementById("historico-corpo");
-//     historicoCorpo.innerHTML = "";  // Limpa o conteúdo atual
-
-//     try {
-//         const transacoes = await apiGet("/transacoes/");
+    try {
+        const categorias = await apiGet("/categorias");
+        const transacoes = await apiGet("/transacoes/");
         
-//         transacoes.forEach(transacao => {
-//             const linha = document.createElement("tr");
-//             linha.innerHTML = `
-//                 <td>${new Date(transacao.data_hora).toLocaleString('pt-BR')}</td>
-//                 <td>${transacao.tipo}</td>
-//                 <td>${transacao.descricao}</td>
-//                 <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
-//                 <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
-//             `;
-//             historicoCorpo.appendChild(linha);
-//         });
-
-//         // Atualiza os botões de paginação
-//         document.getElementById("pagina-atual").innerText = `Página ${pagina}`;
-//         document.getElementById("anterior").disabled = pagina <= 1;
-//         // Desative o botão próximo dependendo se há mais páginas
-//         document.getElementById("proximo").disabled = false; // Ajuste conforme necessário
-//     } catch (error) {
-//         console.error("Erro ao carregar o histórico:", error);
-//     }
-// }
+        transacoes.forEach(transacao => {
+            const linha = document.createElement("tr");
+            linha.innerHTML = `
+                <td>${new Date(transacao.data_hora).toLocaleString('pt-BR').split(',')[0]}</td>
+                <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td>
+                <td>${transacao.descricao}</td>
+                <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
+                <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
+                <td>${transacao.parcelas == 0 ? "Sem parcelamento." : transacao.parcelas == 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
+            `;
+            historicoCorpo.appendChild(linha);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar o histórico:", error);
+    }
+}
 
 // Função para carregar as faturas
 async function carregarFaturas() {
@@ -221,17 +215,6 @@ async function carregarFaturas() {
 document.addEventListener("DOMContentLoaded", () => {
     renderGraficoReceitaDespesa();
     renderGraficoMaioresGastos();
-    // carregarHistorico(paginaAtual);
+    carregarHistorico();
     carregarFaturas();
-
-    // Adiciona os eventos de clique para os botões de paginação
-    // document.getElementById("anterior").addEventListener("click", () => {
-    //     if (paginaAtual > 1) {
-    //         carregarHistorico(--paginaAtual);
-    //     }
-    // });
-
-    // document.getElementById("proximo").addEventListener("click", () => {
-    //     carregarHistorico(++paginaAtual);
-    // });
 });
