@@ -58,6 +58,13 @@ def read_transacoes(db: Session = Depends(get_db)):
         return crud.get_transacoes(db)
     except Exception as e:
         return []
+    
+@app.get("/transacoes/{transacao_id}", response_model=schemas.Transacao)
+def get_transacao_id(transacao_id: int, db: Session = Depends(get_db)):
+    try:
+        return crud.get_transacoes(db, transacao_id)
+    except Exception as e:
+        return []
 
 @app.put("/transacoes/{transacao_id}", response_model=schemas.Transacao)
 def update_transacao(transacao_id: int, transacao: schemas.TransacaoUpdate, db: Session = Depends(get_db)):
@@ -67,21 +74,3 @@ def update_transacao(transacao_id: int, transacao: schemas.TransacaoUpdate, db: 
 def delete_transacao(transacao_id: int, db: Session = Depends(get_db)):
     crud.delete_transacao(db, transacao_id=transacao_id)
     return {"message": "Transação deletada com sucesso"}
-
-# Rotas para Parcela
-@app.post("/parcelas/", response_model=schemas.Parcela)
-def create_parcela(parcela: schemas.ParcelaCreate, db: Session = Depends(get_db)):
-    return crud.create_parcela(db=db, parcela=parcela)
-
-@app.get("/parcelas/", response_model=List[schemas.Parcela])
-def read_parcelas(db: Session = Depends(get_db)):
-    return crud.get_parcelas(db)
-
-@app.put("/parcelas/{parcela_id}", response_model=schemas.Parcela)
-def update_parcela(parcela_id: int, parcela: schemas.ParcelaUpdate, db: Session = Depends(get_db)):
-    return crud.update_parcela(db=db, parcela_id=parcela_id, parcela=parcela)
-
-@app.delete("/parcelas/{parcela_id}")
-def delete_parcela(parcela_id: int, db: Session = Depends(get_db)):
-    crud.delete_parcela(db, parcela_id=parcela_id)
-    return {"message": "Parcela deletada com sucesso"}

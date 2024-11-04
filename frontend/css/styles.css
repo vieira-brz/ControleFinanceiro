@@ -12,7 +12,7 @@
 
 body {
     display: flex;
-    /* min-width: 100vw; */
+    min-width: 90vw;
     /* min-height: 100vh; */
     flex-direction: column;
     background-color: #f0f2f5;
@@ -86,6 +86,10 @@ main {
     justify-content: space-between;
 }
 
+#dashboard div {
+    width: 50%;
+}
+
 /* Estilos de Gráficos */
 .chart-container {
     padding: 20px;
@@ -105,7 +109,6 @@ main {
 
 #historico-mensal, #faturas {
     padding: 20px;
-    margin-top: 20px;
     border-radius: 15px;
 }
 
@@ -190,8 +193,8 @@ footer p {
         flex-direction: column;
     }
 
-    body > header > nav {
-        display: flex;
+    body > header > button {
+        display: none !important;
     }
 
     .flex-mobile-col {
@@ -206,19 +209,19 @@ footer p {
         width: 100%;
     }
 
+    #responsive-menu {
+        display: flex;
+        flex-direction: row;
+    }
+    
     #responsive-menu a {
-        padding: 8px 16px;
         width: 100%;
+        padding: 8px 16px;
         text-align: center;
     }
 
     #historico-mensal h2, #faturas h2 {
         font-size: 1.2em;
-    }
-
-    #paginacao button {
-        padding: 8px 10px;
-        font-size: 0.8em;
     }
 }
 

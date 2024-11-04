@@ -8,13 +8,6 @@ class Categoria(Base):
     nome = Column(String, nullable=False)
     tipo = Column(String, nullable=False)
 
-class Fatura(Base):
-    __tablename__ = "faturas"
-    id = Column(Integer, primary_key=True, index=True)
-    mes = Column(Integer, nullable=False)
-    ano = Column(Integer, nullable=False)
-    total = Column(DECIMAL(10, 2), default=0)
-
 class Transacao(Base):
     __tablename__ = "transacoes"
     id = Column(Integer, primary_key=True, index=True)
@@ -29,11 +22,3 @@ class Transacao(Base):
     parcela_atual = Column(Integer, default=1)
     fixa = Column(Boolean, default=False)  
     encerrada = Column(Boolean, default=False)  
-
-class Parcela(Base):
-    __tablename__ = "parcelas"
-    id = Column(Integer, primary_key=True, index=True)
-    transacao_id = Column(Integer, ForeignKey("transacoes.id"))
-    data_parcela = Column(DateTime)
-    valor_parcela = Column(DECIMAL(10, 2), nullable=False)
-    encerrada = Column(Boolean, default=False)  # Indica se a parcela foi encerrada

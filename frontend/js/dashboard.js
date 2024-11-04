@@ -110,17 +110,29 @@ async function carregarHistorico() {
     try {
         const categorias = await apiGet("/categorias");
         const transacoes = await apiGet("/transacoes/");
+
+        transacoes.sort((a, b) => b.data_hora.localeCompare(a.data_hora));
         
         transacoes.forEach(transacao => {
             const linha = document.createElement("tr");
-            linha.innerHTML = `
-                <td>${new Date(transacao.data_hora).toLocaleString('pt-BR').split(',')[0]}</td>
-                <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td>
-                <td>${transacao.descricao}</td>
-                <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
-                <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
-                <td>${transacao.parcelas == 0 ? "Sem parcelamento." : transacao.parcelas == 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
-            `;
+
+            const mesAtual =  new Date().getMonth()
+            const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
+            const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
+
+            // Verifica se a data da transação é dentro do mês atual
+            if (mesTransacao >= (mesAtual - 1)) {
+                linha.innerHTML = `
+                    <td>${transacao.fixa ? 'Transação Fixa' : new Date(transacao.data_hora).toLocaleString('pt-BR').split(',')[0]}</td>
+                    <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td>
+                    <td>${transacao.destinatario}</td>
+                    <td>${transacao.descricao}</td>
+                    <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
+                    <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
+                    <td>${transacao.parcelas == 0 ? "Sem parcelamento." : transacao.parcelas == 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
+                `;
+            }
+
             historicoCorpo.appendChild(linha);
         });
     } catch (error) {
@@ -128,8 +140,9 @@ async function carregarHistorico() {
     }
 }
 
-// Função para carregar as faturas
+// Função assíncrona para carregar as faturas
 async function carregarFaturas() {
+    // Mapeamento dos meses para exibição
     const meses = {
         1: 'Janeiro',
         2: 'Fevereiro',
@@ -146,68 +159,85 @@ async function carregarFaturas() {
     };
 
     const faturasCorpo = document.getElementById("faturas-corpo");
-    faturasCorpo.innerHTML = "";  // Limpa o conteúdo atual
+    faturasCorpo.innerHTML = "";  // Limpa o conteúdo atual do corpo da tabela de faturas
 
-    const transacoes = await apiGet("/transacoes/");
-    
-    const faturas = {}; // Um objeto para agrupar faturas por mês e ano
+    try {
+        // Faz a requisição para obter as transações
+        const transacoes = await apiGet("/transacoes/");
+        
+        const faturas = {}; // Um objeto para agrupar faturas por mês e ano
 
-    // Obtenha o mês atual e o ano atual
-    const dataAtual = new Date();
-    const mesAtual = dataAtual.getMonth() + 1; // Mês em formato 1-12
-    const anoAtual = dataAtual.getFullYear();
+        // Obtém a data atual
+        const dataAtual = new Date();
+        const mesAtual = dataAtual.getMonth() + 1; // Mês atual (1-12)
+        const anoAtual = dataAtual.getFullYear(); // Ano atual
 
-    // Agrupar transações por mês e ano
-    transacoes.forEach(transacao => {
-        const dataTransacao = new Date(transacao.data_hora);
-        const mesTransacao = dataTransacao.getMonth() + 1; // Mês em formato 1-12
-        const anoTransacao = dataTransacao.getFullYear();
+        // Filtra as transações fixas
+        const valores_fixos = transacoes
+            .filter(transaction => transaction.fixa === true) // Filtra transações fixas
+            .reduce((total, transaction) => total + parseFloat(transaction.valor), 0); // Soma os valores fixos
 
-        // Lógica para lidar com parcelas
-        if (transacao.parcelas > 0) {
-            for (let i = 0; i < transacao.parcelas; i++) {
-                let mesParcela = mesTransacao + i;
-                let anoParcela = anoTransacao;
+        // Agrupa transações por mês e ano
+        transacoes.forEach(transacao => {
+            const dataTransacao = new Date(transacao.data_hora); // Converte a data da transação
+            const mesTransacao = dataTransacao.getMonth() + 1; // Mês da transação (1-12)
+            const anoTransacao = dataTransacao.getFullYear(); // Ano da transação
+            
+            // Lógica para lidar com parcelas
+            if (!transacao.fixa) { // Apenas para transações não fixas
+                if (transacao.parcelas > 0) { // Verifica se há parcelas
+                    for (let i = 0; i < transacao.parcelas; i++) {
+                        let mesParcela = mesTransacao + i; // Mês da parcela
+                        let anoParcela = anoTransacao; // Ano da parcela
 
-                if (mesParcela > 12) {
-                    mesParcela -= 12;
-                    anoParcela++;
+                        // Ajusta mês e ano se ultrapassar dezembro
+                        if (mesParcela > 12) {
+                            mesParcela -= 12;
+                            anoParcela++;
+                        }
+
+                        const chaveFatura = `${mesParcela}-${anoParcela}`; // Chave para identificar a fatura
+                        if (!faturas[chaveFatura]) {
+                            // Inicializa a fatura se não existir
+                            faturas[chaveFatura] = {
+                                mes: mesParcela,
+                                ano: anoParcela,
+                                total: 0
+                            };
+                        }
+
+                        // Adiciona o valor da parcela à fatura
+                        faturas[chaveFatura].total += transacao.valor / transacao.parcelas;
+                    }
+                } else {
+                    const chaveFatura = `${mesTransacao}-${anoTransacao}`; // Chave para fatura única
+                    if (!faturas[chaveFatura]) {
+                        // Inicializa a fatura se não existir
+                        faturas[chaveFatura] = {
+                            mes: mesTransacao,
+                            ano: anoTransacao,
+                            total: 0
+                        };
+                    }
+                    // Adiciona o valor total à fatura
+                    faturas[chaveFatura].total += transacao.valor;
                 }
-
-                const chaveFatura = `${mesParcela}-${anoParcela}`;
-                if (!faturas[chaveFatura]) {
-                    faturas[chaveFatura] = {
-                        mes: mesParcela,
-                        ano: anoParcela,
-                        total: 0
-                    };
-                }
-
-                faturas[chaveFatura].total += transacao.valor / transacao.parcelas; // Divide o valor pelas parcelas
             }
-        } else {
-            const chaveFatura = `${mesTransacao}-${anoTransacao}`;
-            if (!faturas[chaveFatura]) {
-                faturas[chaveFatura] = {
-                    mes: mesTransacao,
-                    ano: anoTransacao,
-                    total: 0
-                };
-            }
-            faturas[chaveFatura].total += transacao.valor;
+        });
+
+        // Adiciona as faturas no DOM
+        for (const key in faturas) {
+            const fatura = faturas[key]; // Obtém a fatura agrupada
+            const linha = document.createElement("tr"); // Cria uma nova linha na tabela
+            linha.innerHTML = `
+                <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>
+                <td>${fatura.ano}</td>
+                <td>R$ ${(fatura.total + valores_fixos).toFixed(2).replace('.', ',')}</td>
+            `;
+            faturasCorpo.appendChild(linha); // Adiciona a linha à tabela
         }
-    });
-
-    // Adiciona as faturas no DOM
-    for (const key in faturas) {
-        const fatura = faturas[key];
-        const linha = document.createElement("tr");
-        linha.innerHTML = `
-            <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>
-            <td>${fatura.ano}</td>
-            <td>R$ ${fatura.total.toFixed(2).replace('.', ',')}</td>
-        `;
-        faturasCorpo.appendChild(linha);
+    } catch (error) {
+        console.error("Erro ao carregar as faturas:", error); // Tratamento de erro caso a requisição falhe
     }
 }
 

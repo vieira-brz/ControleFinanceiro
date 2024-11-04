@@ -72,59 +72,12 @@ def update_transacao(db: Session, transacao_id: int, transacao: schemas.Transaca
 def get_transacoes(db: Session):
     return db.query(models.Transacao).all()
 
+def get_transacao_id(db: Session, transacao_id: int):
+    return db.query(models.Transacao).filter(models.Transacao.id == transacao_id).first()
+
 def delete_transacao(db: Session, transacao_id: int):
     db_transacao = db.query(models.Transacao).filter(models.Transacao.id == transacao_id).first()
     if not db_transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     db.delete(db_transacao)
-    db.commit()
-
-# Parcela CRUD
-def create_parcela(db: Session, parcela: schemas.ParcelaCreate):
-    transacao = db.query(models.Transacao).filter(models.Transacao.id == parcela.transacao_id).first()
-    if not transacao:
-        raise HTTPException(status_code=404, detail="Transação não encontrada")
-    
-    if transacao.parcelas <= 1:
-        raise HTTPException(status_code=400, detail="Transação não está parcelada")
-
-    valor_parcela = transacao.valor / transacao.parcelas
-    db_parcela = models.Parcela(
-        transacao_id=parcela.transacao_id,
-        data_parcela=parcela.data_parcela,
-        valor_parcela=valor_parcela,
-        encerrada=parcela.encerrada
-    )
-    db.add(db_parcela)
-    db.commit()
-    db.refresh(db_parcela)
-    return db_parcela
-
-def update_parcela(db: Session, parcela_id: int, parcela: schemas.ParcelaUpdate):
-    db_parcela = db.query(models.Parcela).filter(models.Parcela.id == parcela_id).first()
-    if not db_parcela:
-        raise HTTPException(status_code=404, detail="Parcela não encontrada")
-    
-    if parcela.transacao_id is not None:
-        db_parcela.transacao_id = parcela.transacao_id
-    if parcela.data_parcela is not None:
-        db_parcela.data_parcela = parcela.data_parcela
-    if parcela.valor_parcela is not None:
-        db_parcela.valor_parcela = parcela.valor_parcela
-    
-    if parcela.encerrada is not None:
-        db_parcela.encerrada = parcela.encerrada
-    
-    db.commit()
-    db.refresh(db_parcela)
-    return db_parcela
-
-def get_parcelas(db: Session):
-    return db.query(models.Parcela).all()
-
-def delete_parcela(db: Session, parcela_id: int):
-    db_parcela = db.query(models.Parcela).filter(models.Parcela.id == parcela_id).first()
-    if not db_parcela:
-        raise HTTPException(status_code=404, detail="Parcela não encontrada")
-    db.delete(db_parcela)
     db.commit()

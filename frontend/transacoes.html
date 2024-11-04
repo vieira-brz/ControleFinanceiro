@@ -6,76 +6,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle Financeiro - Transações</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script type="module" src="js/api.js"></script>
     <script>
         // Função para formatar o valor como moeda brasileira
         function formatarValor(input) {
-            // Remove qualquer caractere que não seja número
             let value = input.value.replace(/\D/g, '');
-
-            // Se houver valor, formata
             if (value) {
-                value = (parseFloat(value) / 100).toFixed(2); // Converte para decimal
-                input.value = value.replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); // Formatação
+                value = (parseFloat(value) / 100).toFixed(2);
+                input.value = value.replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
             } else {
-                input.value = ''; // Reseta o campo se não houver valor
+                input.value = '';
             }
         }
 
-        // Função para deletar uma transação
-        async function deleteTransacao(id) {
-            const confirmDelete = confirm("Tem certeza que deseja deletar esta transação?");
-            if (confirmDelete) {
-                try {
-                    await apiDelete(`/transacoes/${id}`);
-                    alert("Transação deletada com sucesso.");
-                    await renderTransacoes(); // Atualiza a lista de transações
-                } catch (error) {
-                    console.error("Erro ao deletar transação:", error);
-                    alert("Erro ao deletar a transação.");
-                }
-            }
+        // Função para abrir o modal de edição
+        function openEditModal(transacao) {
+            document.getElementById("editModal").style.display = "block";
+            document.getElementById("editTipo").value = transacao.tipo;
+            document.getElementById("editValor").value = (transacao.valor).toFixed(2).replace('.', ',');
+            document.getElementById("editRemetente").value = transacao.remetente || '';
+            document.getElementById("editDestinatario").value = transacao.destinatario || '';
+            document.getElementById("editDescricao").value = transacao.descricao || '';
+            document.getElementById("editCategoriaId").value = transacao.categoria_id;
+            document.getElementById("editParcelas").value = transacao.parcelas;
+            document.getElementById("editFixa").value = transacao.fixa.toString();
+            document.getElementById("editEncerrada").value = transacao.encerrada.toString();
+            document.getElementById("editTransactionId").value = transacao.id; // Salvar ID para atualização
         }
 
-        // Função para editar uma transação
-        async function editTransacao(id) {
-            const transacao = await apiGet(`/transacoes/${id}`); // Carrega a transação a ser editada
+        // Função para fechar o modal
+        function closeEditModal() {
+            document.getElementById("editModal").style.display = "none";
+        }
 
-            // Preenche o formulário com os dados da transação
-            document.getElementById("tipo").value = transacao.tipo;
-            document.getElementById("valor").value = (transacao.valor).toFixed(2).replace('.', ',');
-            document.getElementById("remetente").value = transacao.remetente;
-            document.getElementById("destinatario").value = transacao.destinatario;
-            document.getElementById("descricao").value = transacao.descricao;
-            document.getElementById("categoria_id").value = transacao.categoria_id;
-            document.getElementById("parcelas").value = transacao.parcelas;
-            document.getElementById("fixa").value = transacao.fixa.toString();
-            document.getElementById("encerrada").value = transacao.encerrada.toString();
+        // Função para salvar as alterações
+        async function saveEdit() {
+            const id = document.getElementById("editTransactionId").value;
+            const valorInput = document.getElementById("editValor");
+            const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.'));
 
-            // Altera o botão para atualizar em vez de criar
-            const form = document.getElementById("transacao-form");
-            form.onsubmit = async function (e) {
-                e.preventDefault();
-                const valorInput = document.getElementById("valor");
-                const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.')); // Formatação do valor
-
-                await apiPut(`/transacoes/${id}`, {
-                    tipo: document.getElementById("tipo").value,
-                    valor: valor,
-                    remetente: document.getElementById("remetente").value,
-                    destinatario: document.getElementById("destinatario").value,
-                    descricao: document.getElementById("descricao").value,
-                    categoria_id: parseInt(document.getElementById("categoria_id").value),
-                    parcelas: document.getElementById("parcelas").value,
-                    fixa: document.getElementById("fixa").value === "true",
-                    encerrada: document.getElementById("encerrada").value === "true"
-                });
-
-                alert("Transação atualizada com sucesso.");
-                await renderTransacoes(); // Atualiza a lista de transações
-                form.reset(); // Limpa o formulário
-                form.onsubmit = null; // Remove a função de edição
+            const transacaoAtualizada = {
+                tipo: document.getElementById("editTipo").value,
+                valor: valor,
+                remetente: document.getElementById("editRemetente").value,
+                destinatario: document.getElementById("editDestinatario").value,
+                descricao: document.getElementById("editDescricao").value,
+                categoria_id: parseInt(document.getElementById("editCategoriaId").value),
+                parcelas: document.getElementById("editParcelas").value,
+                fixa: document.getElementById("editFixa").value === "true",
+                encerrada: document.getElementById("editEncerrada").value === "true"
             };
+
+            if (transacaoAtualizada.encerrada) {
+                // Se encerrada, chamar a rota de deletar
+                await apiDelete(`/transacoes/${id}`);
+                alert("Transação encerrada e deletada com sucesso.");
+            } else {
+                await apiPut(`/transacoes/${id}`, transacaoAtualizada);
+                alert("Transação atualizada com sucesso.");
+            }
+
+            closeEditModal();
+            await renderTransacoes(); // Atualiza a lista de transações
         }
     </script>
 </head>
@@ -102,56 +95,47 @@
                         <option value="pix">PIX</option>
                     </select>
                 </div>
-
                 <div class="field-group">
                     <label for="valor">Valor:</label>
                     <input type="text" id="valor" name="valor" placeholder="R$ 0,00" required
                         oninput="formatarValor(this)">
                 </div>
-
                 <div class="field-group">
                     <label for="remetente">Remetente:</label>
                     <input type="text" id="remetente" name="remetente">
                 </div>
-
                 <div class="field-group">
                     <label for="destinatario">Destinatário:</label>
-                    <input type="text" id="destinatario" name="destinatario">
+                    <input type="text" id="destinatario" name="destinatario" required>
                 </div>
-
                 <div class="field-group">
                     <label for="descricao">Descrição:</label>
-                    <input type="text" id="descricao" name="descricao">
+                    <input type="text" id="descricao" name="descricao" required>
                 </div>
-
                 <div class="field-group">
                     <label for="categoria_id">Categoria:</label>
                     <select id="categoria_id" name="categoria_id" required>
                         <!-- As categorias existentes serão preenchidas aqui -->
                     </select>
                 </div>
-
                 <div class="field-group">
                     <label for="parcelas">Parcelas:</label>
                     <input type="number" id="parcelas" name="parcelas" value="1" min="0" required>
                 </div>
-
                 <div class="field-group">
                     <label for="fixa">Fixa:</label>
-                    <select id="fixa" name="fixa">
+                    <select id="fixa" name="fixa" required>
                         <option value="false">Não</option>
                         <option value="true">Sim</option>
                     </select>
                 </div>
-
                 <div class="field-group">
                     <label for="encerrada">Encerrada:</label>
-                    <select id="encerrada" name="encerrada">
+                    <select id="encerrada" name="encerrada" required>
                         <option value="false">Não</option>
                         <option value="true">Sim</option>
                     </select>
                 </div>
-
                 <button type="submit">Cadastrar Transação</button>
             </form>
         </div>
@@ -169,26 +153,91 @@
         <p>&copy; 2024 Controle Financeiro</p>
     </footer>
 
-    <!-- Scripts -->
+    <!-- Modal de Edição -->
+    <div id="editModal" style="display:none;">
+        <div>
+            <h3>Editar Transação</h3>
+            <form id="edit-transacao-form">
+                <input type="hidden" id="editTransactionId">
+                <div class="field-group">
+                    <label for="editTipo">Tipo:</label>
+                    <select id="editTipo" name="tipo" required>
+                        <option value="débito">Débito</option>
+                        <option value="crédito">Crédito</option>
+                        <option value="pix">PIX</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="editValor">Valor:</label>
+                    <input type="text" id="editValor" name="valor" placeholder="R$ 0,00" required
+                        oninput="formatarValor(this)">
+                </div>
+                <div class="field-group">
+                    <label for="editRemetente">Remetente:</label>
+                    <input type="text" id="editRemetente" name="remetente">
+                </div>
+                <div class="field-group">
+                    <label for="editDestinatario">Destinatário:</label>
+                    <input type="text" id="editDestinatario" name="destinatario">
+                </div>
+                <div class="field-group">
+                    <label for="editDescricao">Descrição:</label>
+                    <input type="text" id="editDescricao" name="descricao">
+                </div>
+                <div class="field-group">
+                    <label for="editCategoriaId">Categoria:</label>
+                    <select id="editCategoriaId" name="categoria_id" required>
+                        <!-- As categorias existentes serão preenchidas aqui -->
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="editParcelas">Parcelas:</label>
+                    <input type="number" id="editParcelas" name="parcelas" value="1" min="0" required>
+                </div>
+                <div class="field-group">
+                    <label for="editFixa">Fixa:</label>
+                    <select id="editFixa" name="fixa">
+                        <option value="false">Não</option>
+                        <option value="true">Sim</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="editEncerrada">Encerrada:</label>
+                    <select id="editEncerrada" name="encerrada">
+                        <option value="false">Não</option>
+                        <option value="true">Sim</option>
+                    </select>
+                </div>
+                <button type="button" onclick="saveEdit()">Salvar Alterações</button>
+                <button type="button" onclick="closeEditModal()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
-        import { apiGet, apiPost, apiDelete } from './js/api.js';
+        import { apiGet, apiPost, apiDelete, apiPut } from './js/api.js';
 
         document.addEventListener("DOMContentLoaded", async () => {
-            var categorias = []
+            var categorias = [];
 
             // Função para preencher o select de categorias
             async function loadCategorias() {
                 categorias = await apiGet("/categorias");
                 const categoriaSelect = document.getElementById("categoria_id");
-                categoriaSelect.innerHTML = ""; // Limpa o conteúdo
+                const editCategoriaSelect = document.getElementById("editCategoriaId");
+                categoriaSelect.innerHTML = "";
+                editCategoriaSelect.innerHTML = "";
 
                 categorias.sort((a, b) => a.nome.localeCompare(b.nome));
 
                 categorias.forEach(categoria => {
                     const option = document.createElement("option");
                     option.value = categoria.id;
-                    option.textContent = categoria.nome; // Exibe o nome da categoria
+                    option.textContent = categoria.nome;
                     categoriaSelect.appendChild(option);
+
+                    const editOption = option.cloneNode(true);
+                    editCategoriaSelect.appendChild(editOption);
                 });
             }
 
@@ -197,32 +246,35 @@
                 e.preventDefault();
 
                 const valorInput = document.getElementById("valor");
-                const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.')); // Formatação do valor
+                const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.'));
 
                 const novaTransacao = {
                     tipo: document.getElementById("tipo").value,
                     valor: valor,
-                    data_hora: new Date().toISOString(), // Pega a data atual
+                    data_hora: new Date().toISOString(),
                     remetente: document.getElementById("remetente").value,
                     destinatario: document.getElementById("destinatario").value,
                     descricao: document.getElementById("descricao").value,
                     categoria_id: parseInt(document.getElementById("categoria_id").value),
                     parcelas: document.getElementById("tipo").value === 'débito' ? 0 : parseInt(document.getElementById("parcelas").value),
                     fixa: document.getElementById("fixa").value === "true",
-                    encerrada: document.getElementById("encerrada").value === "false" // Default é "Não"
-                };                
+                    encerrada: document.getElementById("encerrada").value === "false"
+                };
 
                 await apiPost("/transacoes/", novaTransacao);
-                await renderTransacoes(); // Atualiza a lista de transações
-                e.target.reset(); // Limpa o formulário
+                await renderTransacoes();
+                e.target.reset();
             });
 
             // Função para renderizar as transações existentes
             async function renderTransacoes() {
                 const transacoesContainer = document.getElementById("transacoes-container");
-                transacoesContainer.innerHTML = ""; // Limpa o conteúdo
+                transacoesContainer.innerHTML = "";
 
                 const transacoes = await apiGet("/transacoes/");
+
+                transacoes.sort((a, b) => a.data_hora.localeCompare(b.data_hora));
+
                 transacoes.forEach(transacao => {
                     const transacaoItem = document.createElement("div");
                     transacaoItem.classList.add("transacao-item");
@@ -230,7 +282,7 @@
                         <p><strong>Tipo:</strong> ${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</p>
                         <p><strong>Valor:</strong> R$ ${transacao.valor.toFixed(2).replace('.', ',')}</p>
                         <p><strong>Data e Hora:</strong> ${new Date(transacao.data_hora).toLocaleString('pt-BR').replace(',', ' às')}</p>
-                        <p><strong>Remetente:</strong> ${transacao.remetente}</p>
+                        <p><strong>Remetente:</strong> ${transacao.remetente ? transacao.remetente : 'Eu mesmo'}</p>
                         <p><strong>Destinatário:</strong> ${transacao.destinatario}</p>
                         <p><strong>Descrição:</strong> ${transacao.descricao}</p>
                         <p><strong>Categoria:</strong> ${categorias.filter(value => value.id === transacao.categoria_id)[0]?.nome || 'Desconhecida'}</p>
@@ -238,12 +290,46 @@
                         <p><strong>Fixa:</strong> ${transacao.fixa ? "Sim" : "Não"}</p>
                         <p><strong>Encerrada:</strong> ${transacao.encerrada ? "Sim" : "Não"}</p>
                         <div class="buttons">
-                            <button onclick="editTransacao(${transacao.id})">Editar</button>
-                            <button onclick="deleteTransacao(${transacao.id})">Deletar</button>
+                            <button class="editTransacao" id="${transacao.id}">Editar</button>
+                            <button class="deleteTransacao" id="${transacao.id}">Deletar</button>
                         </div>
                     `;
                     transacoesContainer.appendChild(transacaoItem);
                 });
+
+                // Adiciona os eventos de clique para os botões de edição e deleção
+                document.querySelectorAll('.editTransacao').forEach(button => {
+                    button.addEventListener('click', () => {
+                        editTransacao(button.id);
+                    });
+                });
+
+                document.querySelectorAll('.deleteTransacao').forEach(button => {
+                    button.addEventListener('click', () => {
+                        deleteTransacao(button.id);
+                    });
+                });
+            }
+
+            // Função para deletar uma transação
+            async function deleteTransacao(id) {
+                const confirmDelete = confirm("Tem certeza que deseja deletar esta transação?");
+                if (confirmDelete) {
+                    try {
+                        await apiDelete(`/transacoes/${id}`);
+                        alert("Transação deletada com sucesso.");
+                        await renderTransacoes(); // Atualiza a lista de transações
+                    } catch (error) {
+                        console.error("Erro ao deletar transação:", error);
+                        alert("Erro ao deletar a transação.");
+                    }
+                }
+            }
+
+            // Função para editar uma transação
+            async function editTransacao(id) {
+                const transacao = await apiGet(`/transacoes/${id}`); // Carrega a transação a ser editada
+                openEditModal(transacao); // Abre o modal e preenche com os dados
             }
 
             // Carrega categorias e transações ao carregar a página
