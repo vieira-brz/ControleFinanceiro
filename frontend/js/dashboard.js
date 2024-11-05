@@ -110,12 +110,32 @@ async function renderGraficoReceitaDespesa() {
             },
             tooltip: {
                 trigger: 'axis',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)', // Fundo claro para o tooltip
+                padding: [5, 10],
+                confine: true,  // Garante que o tooltip não saia do contêiner, mas você pode definir como `false` se preferir
+                extraCssText: 'width: fit-content; white-space: nowrap;', // Ajusta ao conteúdo e evita quebra de linha
+                formatter: function (params) {
+                    let count = 0
+                    let tooltipContent = '';
+                    params.forEach(item => {
+                        let mbottom = count == 0 ? 10 : 0
+
+                        tooltipContent += `<div style="white-space: nowrap; margin-bottom: ${mbottom}px;">
+                            ${item.seriesName} <br>
+                            ${item.name} : R$ ${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>`;
+
+                        count++
+                    });
+                    return tooltipContent;
+                },
                 axisPointer: {
                     type: 'cross'
-                }
+                },
             },
+            
             legend: {
-                data: ['Receita', 'Despesa'], 
+                data: ['Receita', 'Despesa'],
                 orient: 'vertical',
                 right: window.innerWidth > 768 ? '80px' : '0' // Define a margem direita com base na largura da tela
             },
@@ -201,11 +221,23 @@ async function renderGraficoMaioresGastos() {
 
     // Configuração do gráfico
     const option = {
-        title: { 
-            text: 'Maiores Gastos por Categoria', 
-            left: 'center',  
+        title: {
+            text: 'Maiores Gastos por Categoria',
+            left: 'center',
         },
-        tooltip: { trigger: 'item' },
+        tooltip: {
+            confine: true,  // Mantém o tooltip dentro dos limites do contêiner
+            backgroundColor: 'rgba(255, 255, 255, 0.9)', // Fundo claro para o tooltip
+            padding: [5, 10],
+            trigger: 'item',
+            extraCssText: 'width: auto; white-space: nowrap;', // Força o ajuste ao conteúdo e evita quebra de linha
+            formatter: function (params) {
+                return `<div style="width: auto; white-space: nowrap;">
+                    ${params.seriesName} <br>
+                    ${params.name} : R$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${params.percent}%)
+                </div>`;
+            }
+        },
         // legend: {
         //     show: window.innerWidth > 768,  // Exibe a legenda apenas para telas maiores que 768px
         //     orient: window.innerWidth > 768 ? 'vertical' : 'horizontal',
@@ -216,6 +248,21 @@ async function renderGraficoMaioresGastos() {
                 name: 'Gastos',
                 type: 'pie',
                 radius: ['30%', '55%'],
+                label: {
+                    show: true,
+                    position: 'outside',
+                    formatter: function (params) {
+                        return `\n${params.name}\n\nR$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    },
+                    fontSize: 12,
+                    color: '#333',
+                    distance: 15 // Aumenta o espaçamento entre o rótulo e o gráfico
+                },
+                labelLine: {
+                    show: true,
+                    length: 30, // Comprimento da linha que conecta ao gráfico
+                    length2: 10 // Segundo segmento da linha
+                },
                 data: data.map((item, index) => ({
                     ...item,
                     itemStyle: {
@@ -261,7 +308,7 @@ async function carregarHistorico() {
                 linha.innerHTML = `
                     <td>${transacao.fixa ? 'Transação Fixa' : new Date(transacao.data_hora).toLocaleString('pt-BR').split(',')[0]}</td>
                     <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td>
-                    <td>${transacao.destinatario ? transacao.destinatario : 'Eu mesmo'}</td>
+                    <td>${transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() ? transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() : 'Eu mesmo'}</td>
                     <td>${transacao.descricao}</td>
                     <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
                     <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
@@ -374,57 +421,77 @@ async function carregarFaturas() {
     }
 }
 
- // Função para criar o gráfico
- function renderGraficoContasBancarias() {
+// Função para criar o gráfico
+async function renderGraficoBancario() {
     const chart = echarts.init(document.getElementById('grafico-contas-bancarias'));
-    
+
+    // Função para buscar e processar os dados de transações
+    async function fetchData() {
+        try {
+            const transacoes = await apiGet("/transacoes/");
+
+            // Agrupa os valores das transações por destinatário
+            const destinatariosMap = {};
+            transacoes.forEach(transacao => {
+                if (transacao.tipo != 'receita') {
+                    const destinatario = transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() || 'Outro';
+                    destinatariosMap[destinatario] = (destinatariosMap[destinatario] || 0) + transacao.valor;
+                }
+            });
+
+            // Converte o mapa em uma lista para o gráfico
+            return Object.entries(destinatariosMap).map(([name, value]) => ({ name, value }));
+        } catch (error) {
+            console.error("Erro ao buscar dados de transações:", error);
+            return [];
+        }
+    }
+
+    const chartData = await fetchData();
+
     const chartOptions = {
         title: {
-            text: 'Saldo em Contas Bancárias',
+            text: 'Faturas por Banco',
             left: 'center'
         },
-        tooltip: {
-            trigger: 'item',
-            formatter: '{a} <br/>{b} : {c} ({d}%)'
+        legend: {
+            // show: window.innerWidth > 768,  // Exibe a legenda apenas para telas maiores que 768px
+            orient: 'horizontal',
+            left: 'center',
+            top: '40px',
         },
-        // legend: {
-        //     show: window.innerWidth > 768,
-        //     orient: window.innerWidth > 768 ? 'vertical' : 'horizontal',
-        //     left: window.innerWidth > 768 ? 'left' : 'center',
-        //     top: window.innerWidth > 768 ? 'middle' : 'bottom'
-        // },
         series: [
             {
-                name: 'Saldo',
+                name: 'Valor',
                 type: 'pie',
                 radius: '50%',
-                data: [
-                    { value: 1048, name: 'Conta Corrente' },
-                    { value: 735, name: 'Poupança' },
-                    { value: 580, name: 'Investimentos' },
-                    { value: 484, name: 'Carteira Digital' },
-                    { value: 300, name: 'Conta Internacional' }
-                ],
-                emphasis: {
+                radius: ['30%', '55%'],
+                label: {
+                    show: true,
+                    formatter: function (params) {
+                        return `${params.name}\n\nR$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n${params.percent}%`;
+                    },
+                    fontSize: 12,
+                    color: '#333'
+                },
+                data: chartData.map(item => ({
+                    ...item,
                     itemStyle: {
-                        shadowBlur: 10,
-                        shadowOffsetX: 0,
-                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        color: item.name === 'Inter' ? '#FFA500' : // Laranja para Inter
+                            item.name === 'Will' ? '#FFD700' : // Amarelo para Will
+                                item.name === 'Nubank' ? '#800080' : // Roxo para Nubank
+                                    item.name === 'Familiar' ? '#C0C0C0' : // Cinza para Familiar
+                                        '#C0C0C0' // Cinza claro para outros
                     }
-                }
+                })),
             }
-        ]
+        ]        
     };
 
     chart.setOption(chartOptions);
 
-    // Redimensiona o gráfico ao redimensionar a tela
+    // Ajusta o gráfico ao redimensionar a tela
     window.addEventListener('resize', () => {
-        chartOptions.legend.show = window.innerWidth > 768;
-        chartOptions.legend.orient = window.innerWidth > 768 ? 'vertical' : 'horizontal';
-        chartOptions.legend.left = window.innerWidth > 768 ? 'left' : 'center';
-        chartOptions.legend.top = window.innerWidth > 768 ? 'middle' : 'bottom';
-        chart.setOption(chartOptions);
         chart.resize();
     });
 }
@@ -433,7 +500,7 @@ async function carregarFaturas() {
 document.addEventListener("DOMContentLoaded", () => {
     renderGraficoReceitaDespesa();
     renderGraficoMaioresGastos();
-    renderGraficoContasBancarias();
+    renderGraficoBancario();
     carregarHistorico();
     carregarFaturas();
 });

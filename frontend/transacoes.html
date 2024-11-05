@@ -89,10 +89,10 @@
                 <div class="field-group">
                     <label for="tipo">Tipo:</label>
                     <select id="tipo" name="tipo" required>
-                        <option value="receita">Receita</option>
-                        <option value="débito">Débito</option>
-                        <option value="crédito">Crédito</option>
                         <option value="pix">PIX</option>
+                        <option value="crédito">Crédito</option>
+                        <option value="débito">Débito</option>
+                        <option value="receita">Receita</option>
                     </select>
                 </div>
                 <div class="field-group">
@@ -106,7 +106,14 @@
                 </div>
                 <div class="field-group">
                     <label for="destinatario">Destinatário:</label>
-                    <input type="text" id="destinatario" name="destinatario" required>
+                    <select id="destinatario" name="destinatario" required>
+                        <option value="n/a" selected>Eu mesmo (se for receita)</option>
+                        <option value="inter">Inter</option>
+                        <option value="nubank">Nubank</option>
+                        <option value="willbank">Will Bank</option>
+                        <option value="picpay">PicPay</option>
+                        <option value="familiar">Familiar</option>
+                    </select>
                 </div>
                 <div class="field-group">
                     <label for="descricao">Descrição:</label>
@@ -178,7 +185,13 @@
                 </div>
                 <div class="field-group">
                     <label for="editDestinatario">Destinatário:</label>
-                    <input type="text" id="editDestinatario" name="destinatario">
+                    <select id="editDestinatario" name="destinatario" required>
+                        <option value="" disabled selected>Vazio se não for despesa</option>
+                        <option value="nubank">Nubank</option>
+                        <option value="will">Will</option>
+                        <option value="picpay">PicPay</option>
+                        <option value="familiar">Familiar</option>
+                    </select>
                 </div>
                 <div class="field-group">
                     <label for="editDescricao">Descrição:</label>
@@ -248,35 +261,47 @@
                 const valorInput = document.getElementById("valor");
                 const valor = parseFloat(valorInput.value.replace('.', '').replace(',', '.'));
 
-                let remetente = ''
-                let destinatario = ''
+                let remetente = null;
+                let destinatario = null;
 
-                // Verifica se o tipo não é 'salário' nem 'receita'
-                if (document.getElementById("tipo").value != 'receita') {
-                    remetente = null; // Se não for receita, remetente é nulo
-                    destinatario = document.getElementById("destinatario").value; // Pega o destinatário
+                const tipo = document.getElementById("tipo").value;
+                const descricao = document.getElementById("descricao").value;
+                const categoriaId = parseInt(document.getElementById("categoria_id").value);
+                const parcelas = tipo === 'débito' ? 0 : parseInt(document.getElementById("parcelas").value || 0);
+                const fixa = document.getElementById("fixa").checked;
+                const encerrada = document.getElementById("encerrada").checked;
 
+                if (tipo === 'receita') {
+                    remetente = document.getElementById("remetente").value || 'Indefinido';
                 } else {
-                    remetente = document.getElementById("remetente").value; // Se for receita, pega o remetente
-                    destinatario = null; // Destinatário é nulo
+                    destinatario = document.getElementById("destinatario").value || 'Indefinido';
+                    if (destinatario === 'n/a' || destinatario === remetente) {
+                        alert('Campo destinatário é inválido para despesas (não pode ser você mesmo)!');
+                        return;
+                    }
                 }
 
                 const novaTransacao = {
-                    tipo: document.getElementById("tipo").value,
+                    tipo: tipo,
                     valor: valor,
                     data_hora: new Date().toISOString(),
                     remetente: remetente,
                     destinatario: destinatario,
-                    descricao: document.getElementById("descricao").value,
-                    categoria_id: parseInt(document.getElementById("categoria_id").value),
-                    parcelas: document.getElementById("tipo").value === 'débito' ? 0 : parseInt(document.getElementById("parcelas").value),
-                    fixa: document.getElementById("fixa").value === "true",
-                    encerrada: document.getElementById("encerrada").value === "false"
+                    descricao: descricao,
+                    categoria_id: categoriaId,
+                    parcelas: parcelas,
+                    fixa: fixa,
+                    encerrada: !encerrada // Ajuste conforme os valores padrão
                 };
 
-                await apiPost("/transacoes/", novaTransacao);
-                await renderTransacoes();
-                e.target.reset();
+                try {
+                    await apiPost("/transacoes/", novaTransacao);
+                    await renderTransacoes();
+                    e.target.reset();
+                } catch (error) {
+                    console.error("Erro ao cadastrar transação:", error);
+                    alert("Não foi possível cadastrar a transação. Tente novamente.");
+                }
             });
 
             // Função para renderizar as transações existentes
