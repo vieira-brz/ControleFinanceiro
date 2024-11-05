@@ -12,7 +12,6 @@
 
 body {
     display: flex;
-    min-width: 90vw;
     /* min-height: 100vh; */
     flex-direction: column;
     background-color: #f0f2f5;
@@ -81,7 +80,7 @@ main {
 /* Dashboard Section */
 #dashboard {
     gap: 20px;
-    width: 100%;
+    width: 95vw;
     display: flex;
     justify-content: space-between;
 }
@@ -92,8 +91,8 @@ main {
 
 /* Estilos de Gráficos */
 .chart-container {
-    padding: 20px;
-    height: 45vh;
+    /* padding: 20px; */
+    height: 47vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -178,26 +177,10 @@ footer p {
     color: lightgray;
 }
 
-/* Responsividade */
-@media (max-width: 1024px) {
-    main {
-        grid-template-columns: 1fr;
-    }
-
-    #dashboard {
-        grid-template-columns: 1fr;
-    }
-
-    #responsive-menu {
-        flex-direction: column;
-        align-items: center;
-    }
-}
-
 @media (max-width: 768px) {
     body>header {
-        display: flex;
-        flex-direction: column;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     body>header>button {
@@ -205,15 +188,27 @@ footer p {
     }
 
     .flex-mobile-col {
-        flex-direction: column;
+        width: 48% !important;
+        flex-direction: column !important;
     }
 
     #dashboard {
-        flex-direction: column;
+        margin-bottom: -40px !important;
+        flex-direction: column !important;
+    }
+
+    .forms-container {
+        display: flex !important;
+        flex-direction: column !important;
+        /* Muda para coluna em telas menores */
+    }
+
+    #dashboard div {
+        width: 100% !important;
     }
 
     #faturas {
-        width: 100%;
+        width: 100% !important;
     }
 
     #categorias-list-section #categorias-container {
@@ -229,19 +224,23 @@ footer p {
     }
 
     #responsive-menu {
-        display: flex;
-        flex-direction: row;
+        display: flex !important;
+        flex-direction: row !important;
     }
 
     #responsive-menu a {
-        width: 100%;
-        padding: 8px 16px;
-        text-align: center;
+        width: 100% !important;
+        padding: 8px 16px !important;
+        text-align: center !important;
     }
+
+    /* #historico-mensal, #faturas {
+        width: 48% !important;
+    } */
 
     #historico-mensal h2,
     #faturas h2 {
-        font-size: 1.2em;
+        font-size: 1.2em !important;
     }
 }
 
@@ -253,14 +252,6 @@ footer p {
     display: grid;
     margin-bottom: 60px;
     grid-template-columns: 20% 78%;
-}
-
-@media (max-width: 600px) {
-    .forms-container {
-        display: flex;
-        flex-direction: column;
-        /* Muda para coluna em telas menores */
-    }
 }
 
 .forms-crud {
@@ -400,13 +391,14 @@ footer p {
     gap: 20px;
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
 }
 
 #transacoes-list-section #transacoes-container .transacao-item {
     gap: 10px;
+    width: 100%;
     padding: 15px;
     display: flex;
+    max-width: 330px;
     border-radius: 5px;
     background: white;
     flex-direction: column;

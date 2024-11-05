@@ -47,34 +47,35 @@ async function renderGraficoReceitaDespesa() {
                     // Adiciona valores fixos à despesa se não for o mesmo mês
                     if (ultimo_mes !== mesTransacao) {
                         faturas[chaveFatura].despesa += valoresFixosDespesa; // Adiciona valores fixos à despesa
+                    }
 
-                        // Para salário 1 no dia 15
-                        const chaveFaturaSalario1 = `15/${mesTransacao}/${anoTransacao}`;
+                    // Para salário 1 no dia 15
+                    const chaveFaturaSalario1 = `15/${mesTransacao}/${anoTransacao}`;
 
-                        if (!faturas[chaveFaturaSalario1]) {
-                            const salario1 = transacoes.find(transaction => transaction.id === 31);
-                            faturas[chaveFaturaSalario1] = {
-                                dia: '15',
-                                mes: mesTransacao,
-                                ano: anoTransacao,
-                                receita: salario1 ? parseFloat(salario1.valor) : 0, // Adiciona valores fixos à receita
-                                despesa: 0
-                            };
-                        }
+                    if (!faturas[chaveFaturaSalario1]) {
+                        const salario1 = transacoes.find(transaction => transaction.id === 31);
+                        faturas[chaveFaturaSalario1] = {
+                            dia: '15',
+                            mes: mesTransacao,
+                            ano: anoTransacao,
+                            receita: salario1 ? parseFloat(salario1.valor) : 0, // Adiciona valores fixos à receita
+                            despesa: 0
+                        };
+                    }
 
-                        // Para salário 2 no dia 28
-                        const chaveFaturaSalario2 = `28/${mesTransacao}/${anoTransacao}`;
+                    // Para salário 2 no dia 28
+                    const chaveFaturaSalario2 = `28/${mesTransacao}/${anoTransacao}`;
 
-                        if (!faturas[chaveFaturaSalario2]) {
-                            const salario2 = transacoes.find(transaction => transaction.id === 32);
-                            faturas[chaveFaturaSalario2] = {
-                                dia: '28',
-                                mes: mesTransacao,
-                                ano: anoTransacao,
-                                receita: salario2 ? parseFloat(salario2.valor) : 0, // Adiciona valores fixos à receita
-                                despesa: 0
-                            };
-                        }
+                    if (!faturas[chaveFaturaSalario2]) {
+
+                        const salario2 = transacoes.find(transaction => transaction.id === 32);
+                        faturas[chaveFaturaSalario2] = {
+                            dia: '28',
+                            mes: mesTransacao,
+                            ano: anoTransacao,
+                            receita: salario2 ? parseFloat(salario2.valor) : 0, // Adiciona valores fixos à receita
+                            despesa: 0
+                        };
                     }
                 }
                 else {
@@ -90,21 +91,37 @@ async function renderGraficoReceitaDespesa() {
             }
         });
 
+        // Supondo que `faturas` seja um objeto com chaves no formato "dia/mês/ano"
+        const faturasArray = Object.entries(faturas) // Converte o objeto em um array de pares [chave, valor]
+            .map(([key, value]) => ({ key, ...value })) // Mapeia para um novo objeto contendo a chave e os valores
+            .sort((a, b) => {
+                const dateA = new Date(`${a.key.split('/')[2]}-${a.key.split('/')[1]}-${a.key.split('/')[0]}`);
+                const dateB = new Date(`${b.key.split('/')[2]}-${b.key.split('/')[1]}-${b.key.split('/')[0]}`);
+                return dateA - dateB; // Ordena por data
+            });
+
         // Renderiza o gráfico com ECharts
         const chartDom = document.getElementById('grafico-receita-despesa');
         const myChart = echarts.init(chartDom);
         const option = {
-            title: { text: 'Receita vs Despesa' },
+            title: {
+                text: 'Receita vs Despesa',
+                left: window.innerWidth > 768 ? '40px' : '0' // Define a margem direita com base na largura da tela
+            },
             tooltip: {
                 trigger: 'axis',
                 axisPointer: {
                     type: 'cross'
                 }
             },
-            legend: { data: ['Receita', 'Despesa'] },
+            legend: {
+                data: ['Receita', 'Despesa'], 
+                orient: 'vertical',
+                right: window.innerWidth > 768 ? '80px' : '0' // Define a margem direita com base na largura da tela
+            },
             xAxis: {
                 type: 'category',
-                data: Object.keys(faturas).map(key => key) // Formata os dados do eixo X
+                data: Object.keys(faturasArray).map(key => faturasArray[key].key) // Formata os dados do eixo X
             },
             yAxis: {
                 type: 'value'
@@ -113,7 +130,7 @@ async function renderGraficoReceitaDespesa() {
                 {
                     name: 'Receita',
                     type: 'line',
-                    data: Object.values(faturas).map(f => f.receita), // Usando as receitas
+                    data: Object.values(faturasArray).map(f => f.receita), // Usando as receitas
                     itemStyle: { color: 'green' },
                     lineStyle: { color: 'green' },
                     areaStyle: { color: 'rgba(0, 128, 0, 0.05)' } // Fundo verde com opacidade
@@ -121,7 +138,7 @@ async function renderGraficoReceitaDespesa() {
                 {
                     name: 'Despesa',
                     type: 'line',
-                    data: Object.values(faturas).map(f => f.despesa), // Usando as despesas
+                    data: Object.values(faturasArray).map(f => f.despesa), // Usando as despesas
                     itemStyle: { color: 'red' },
                     lineStyle: { color: 'red' },
                     areaStyle: { color: 'rgba(255, 0, 0, 0.05)' } // Fundo vermelho com opacidade
@@ -170,7 +187,7 @@ async function renderGraficoMaioresGastos() {
         if (transacao.categoria_id != 22) {
             const categoriaId = transacao.categoria_id;
             const valorPorParcela = transacao.valor / (transacao.parcelas || 1); // Considera 1 se parcelas for 0
-    
+
             if (gastosPorCategoria[categoriaId]) {
                 gastosPorCategoria[categoriaId].total += valorPorParcela;
             }
@@ -184,17 +201,21 @@ async function renderGraficoMaioresGastos() {
 
     // Configuração do gráfico
     const option = {
-        title: { text: 'Maiores Gastos por Categoria', left: 'center' },
-        tooltip: { trigger: 'item' },
-        legend: {
-            orient: 'vertical',
-            left: 'left'
+        title: { 
+            text: 'Maiores Gastos por Categoria', 
+            left: 'center',  
         },
+        tooltip: { trigger: 'item' },
+        // legend: {
+        //     show: window.innerWidth > 768,  // Exibe a legenda apenas para telas maiores que 768px
+        //     orient: window.innerWidth > 768 ? 'vertical' : 'horizontal',
+        //     left: window.innerWidth > 768 ? 'left' : 'center',
+        // },        
         series: [
             {
                 name: 'Gastos',
                 type: 'pie',
-                radius: ['45%', '60%'],
+                radius: ['30%', '55%'],
                 data: data.map((item, index) => ({
                     ...item,
                     itemStyle: {
@@ -353,10 +374,66 @@ async function carregarFaturas() {
     }
 }
 
+ // Função para criar o gráfico
+ function renderGraficoContasBancarias() {
+    const chart = echarts.init(document.getElementById('grafico-contas-bancarias'));
+    
+    const chartOptions = {
+        title: {
+            text: 'Saldo em Contas Bancárias',
+            left: 'center'
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b} : {c} ({d}%)'
+        },
+        // legend: {
+        //     show: window.innerWidth > 768,
+        //     orient: window.innerWidth > 768 ? 'vertical' : 'horizontal',
+        //     left: window.innerWidth > 768 ? 'left' : 'center',
+        //     top: window.innerWidth > 768 ? 'middle' : 'bottom'
+        // },
+        series: [
+            {
+                name: 'Saldo',
+                type: 'pie',
+                radius: '50%',
+                data: [
+                    { value: 1048, name: 'Conta Corrente' },
+                    { value: 735, name: 'Poupança' },
+                    { value: 580, name: 'Investimentos' },
+                    { value: 484, name: 'Carteira Digital' },
+                    { value: 300, name: 'Conta Internacional' }
+                ],
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }
+        ]
+    };
+
+    chart.setOption(chartOptions);
+
+    // Redimensiona o gráfico ao redimensionar a tela
+    window.addEventListener('resize', () => {
+        chartOptions.legend.show = window.innerWidth > 768;
+        chartOptions.legend.orient = window.innerWidth > 768 ? 'vertical' : 'horizontal';
+        chartOptions.legend.left = window.innerWidth > 768 ? 'left' : 'center';
+        chartOptions.legend.top = window.innerWidth > 768 ? 'middle' : 'bottom';
+        chart.setOption(chartOptions);
+        chart.resize();
+    });
+}
+
 // Inicializa os gráficos e dados ao carregar a página
 document.addEventListener("DOMContentLoaded", () => {
     renderGraficoReceitaDespesa();
     renderGraficoMaioresGastos();
+    renderGraficoContasBancarias();
     carregarHistorico();
     carregarFaturas();
 });
