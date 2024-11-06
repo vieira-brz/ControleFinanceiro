@@ -23,11 +23,16 @@
     </header>
 
     <main>
+        <!-- Gráficos -->
         <section id="dashboard">
-            <!-- Gráficos -->
-            <div id="grafico-receita-despesa" class="chart-container"></div>
-            <div id="grafico-contas-bancarias" class="chart-container"></div>
-            <div id="grafico-maiores-gastos" class="chart-container"></div>
+            <div class="dashboard-row">
+                <div id="grafico-receita-despesa" class="chart-container"></div>
+                <div id="grafico-maiores-gastos" class="chart-container"></div>
+            </div>
+            <div class="dashboard-row">
+                <div id="grafico-fatura-banco-mes" class="chart-container"></div>
+                <div id="grafico-contas-bancarias" class="chart-container"></div>
+            </div>
         </section>
 
         <!-- Faturas Atuais e Futuras -->
@@ -40,7 +45,9 @@
                             <tr>
                                 <th>Mês</th>
                                 <th>Ano</th>
-                                <th>Total</th>
+                                <th>Despesa</th>
+                                <th>Receita</th>
+                                <th>Sobra</th>
                             </tr>
                         </thead>
                         <tbody id="faturas-corpo">

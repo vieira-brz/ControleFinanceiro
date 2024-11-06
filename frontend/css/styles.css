@@ -82,11 +82,16 @@ main {
     gap: 20px;
     width: 95vw;
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
 }
 
 #dashboard div {
     width: 100%;
+}
+
+#dashboard > .dashboard-row {
+    display: flex;
 }
 
 /* Estilos de Gráficos */
@@ -201,7 +206,15 @@ footer p {
     }
 
     #dashboard {
+        gap: 10px;
         margin-bottom: -40px !important;
+    }
+    
+    #dashboard div {
+        width: 100% !important;
+    }
+    
+    #dashboard > .dashboard-row {
         flex-direction: column !important;
     }
 
@@ -209,14 +222,6 @@ footer p {
         display: flex !important;
         flex-direction: column !important;
         /* Muda para coluna em telas menores */
-    }
-
-    #dashboard {
-        gap: 10px;
-    }
-
-    #dashboard div {
-        width: 100% !important;
     }
 
     #faturas {

@@ -133,7 +133,6 @@ async function renderGraficoReceitaDespesa() {
                     type: 'cross'
                 },
             },
-            
             legend: {
                 data: ['Receita', 'Despesa'],
                 orient: 'vertical',
@@ -159,6 +158,23 @@ async function renderGraficoReceitaDespesa() {
                     name: 'Despesa',
                     type: 'line',
                     data: Object.values(faturasArray).map(f => f.despesa), // Usando as despesas
+                    markLine: {
+                        data: [
+                            {
+                                type: 'average',
+                                name: 'Média de Despesa'
+                            }
+                        ],
+                        lineStyle: {
+                            color: '#F007', 
+                        },
+                        label: {
+                            show: true,
+                            formatter: 'R$ {c}', // Formatação do valor da média
+                            color: '#F00', // Cor do texto da média
+                            fontSize: 8
+                        }
+                    },
                     itemStyle: { color: 'red' },
                     lineStyle: { color: 'red' },
                     areaStyle: { color: 'rgba(255, 0, 0, 0.05)' } // Fundo vermelho com opacidade
@@ -355,6 +371,10 @@ async function carregarFaturas() {
             .filter(transaction => (transaction.fixa === true && transaction.tipo != 'receita'))
             .reduce((total, transaction) => total + parseFloat(transaction.valor), 0); // Soma os valores fixos
 
+        const receitas = transacoes
+            .filter(transaction => (transaction.fixa === true && transaction.tipo == 'receita'))
+            .reduce((total, transaction) => total + parseFloat(transaction.valor), 0);
+
         // Agrupa transações por mês e ano
         transacoes.forEach(transacao => {
             if (transacao.categoria_id != 22) { // Se não for receita, cai na fatura
@@ -413,6 +433,8 @@ async function carregarFaturas() {
                 <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>
                 <td>${fatura.ano}</td>
                 <td>R$ ${(fatura.total + valores_fixos).toFixed(2).replace('.', ',')}</td>
+                <td>R$ ${receitas}</td>
+                <td>R$ ${(receitas - (fatura.total + valores_fixos)).toFixed(2).replace('.', ',')}</td>
             `;
             faturasCorpo.appendChild(linha); // Adiciona a linha à tabela
         }
@@ -460,6 +482,19 @@ async function renderGraficoBancario() {
             left: 'center',
             top: '40px',
         },
+        tooltip: {
+            confine: true,  // Mantém o tooltip dentro dos limites do contêiner
+            backgroundColor: 'rgba(255, 255, 255, 0.9)', // Fundo claro para o tooltip
+            padding: [5, 10],
+            trigger: 'item',
+            extraCssText: 'width: auto; white-space: nowrap;', // Força o ajuste ao conteúdo e evita quebra de linha
+            formatter: function (params) {
+                return `<div style="width: auto; white-space: nowrap;">
+                    ${params.seriesName} <br>
+                    ${params.name} : R$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${params.percent}%)
+                </div>`;
+            }
+        },
         series: [
             {
                 name: 'Valor',
@@ -485,7 +520,7 @@ async function renderGraficoBancario() {
                     }
                 })),
             }
-        ]        
+        ]
     };
 
     chart.setOption(chartOptions);
@@ -496,11 +531,211 @@ async function renderGraficoBancario() {
     });
 }
 
+// Função para renderizar o gráfico de fatura por banco usando ECharts
+async function renderGraficoFaturaBancariaMensal() {
+    // Inicializa o gráfico no elemento com o ID 'grafico-fatura-banco-mes'
+    const chart = echarts.init(document.getElementById("grafico-fatura-banco-mes"));
+
+    // Função para buscar e processar os dados de transações de despesas
+    async function fetchDataDespesa() {
+        try {
+            const transacoes = await apiGet("/transacoes/");
+            const destinatariosMap = {};
+            const mesAtual = new Date().getMonth();
+
+            transacoes.forEach(transacao => {
+                const mesTransacao = new Date(transacao.data_hora).getMonth();
+                if (transacao.tipo !== 'receita' && mesAtual === mesTransacao) {
+                    const destinatario = transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() || 'Outro';
+                    destinatariosMap[destinatario] = (destinatariosMap[destinatario] || 0) + (transacao.valor / (transacao.parcelas || 1));
+                }
+            });
+
+            return Object.entries(destinatariosMap).map(([name, value]) => ({ name, value }));
+        } catch (error) {
+            console.error("Erro ao buscar dados de transações:", error);
+            return [];
+        }
+    }
+
+    // Função para buscar e processar os dados de transações de receitas
+    async function fetchDataReceita() {
+        try {
+            const transacoes = await apiGet("/transacoes/");
+            const mesAtual = new Date().getMonth();
+            let receita = 0;
+
+            transacoes.forEach(transacao => {
+                const mesTransacao = new Date(transacao.data_hora).getMonth();
+                if (transacao.tipo === 'receita' && mesAtual === mesTransacao) {
+                    receita += transacao.valor;
+                }
+            });
+
+            return receita;
+        } catch (error) {
+            console.error("Erro ao buscar dados de transações:", error);
+            return 0;
+        }
+    }
+
+    // Busca e processa os dados de despesas e receitas
+    const DadosDespesa = await fetchDataDespesa();
+    let DadosSaldo = await fetchDataReceita();
+
+    // Extrai os rótulos (bancos) e valores para o gráfico
+    const labels = DadosDespesa.map(item => item.name);
+    const dataValues = DadosDespesa.map(item => ({
+        value: item.value,
+        // itemStyle: {
+        //     color: item.name === 'Inter' ? 'rgba(255, 165, 0, 0.4)' : // Laranja com opacidade para Inter
+        //         item.name === 'Will' ? 'rgba(255, 215, 0, 0.6)' : // Amarelo com opacidade para Will
+        //         item.name === 'Nubank' ? 'rgba(128, 0, 128, 0.4)' : // Roxo com opacidade para Nubank
+        //         item.name === 'Familiar' ? 'rgba(192, 192, 192, 0.4)' : // Cinza com opacidade para Familiar
+        //         'rgba(192, 192, 192, 0.4)', // Cor padrão com opacidade para outros
+        //     borderColor: item.name === 'Inter' ? '#FFA500' :
+        //         item.name === 'Will' ? '#FFD700' :
+        //         item.name === 'Nubank' ? '#800080' :
+        //         item.name === 'Familiar' ? '#C0C0C0' :
+        //         '#C0C0C0' // Cor de borda padrão
+        // }
+    }));
+    
+    // Calcula o saldo restante de forma progressiva
+    let saldoAtual = DadosSaldo;
+    const dataSaldoValues = DadosDespesa.map(item => {
+        const saldoRestante = saldoAtual - item.value;
+        saldoAtual -= item.value;
+        return { value: saldoRestante };
+    });
+
+    // Configuração do gráfico de barras para ECharts
+    const chartOptions = {
+        title: {
+            text: 'Fatura do Mês por Banco',
+            left: window.innerWidth > 768 ? '40px' : 'center'
+        },
+        legend: {
+            orient: 'vertical',
+            right: window.innerWidth > 768 ? '80px' : '0',
+            top: '0%',
+            itemGap: 15
+        },
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)', // Fundo claro para o tooltip
+            padding: [5, 10],
+            confine: true,  // Garante que o tooltip não saia do contêiner, mas você pode definir como `false` se preferir
+            extraCssText: 'width: fit-content; white-space: nowrap;', // Ajusta ao conteúdo e evita quebra de linha
+            formatter: function (params) {
+                let count = 0
+                let tooltipContent = '';
+                params.forEach(item => {
+                    let mbottom = count == 0 ? 10 : 0
+
+                    tooltipContent += `<div style="white-space: nowrap; margin-bottom: ${mbottom}px;">
+                        ${item.seriesName} <br>
+                        R$ ${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>`;
+
+                    count++
+                });
+                return tooltipContent;
+            },
+            axisPointer: {
+                type: 'cross'
+            },
+        },
+        xAxis: {
+            type: 'category',
+            data: labels,
+            axisLabel: {
+                interval: 0,
+                rotate: window.innerWidth > 768 ? 0 : 30
+            },
+            name: "Banco"
+        },
+        yAxis: {
+            type: 'value',
+            name: "Valor (R$)",
+            axisLabel: {
+                formatter: function (value) {
+                    return `R$ ${value.toLocaleString('pt-BR')}`;
+                }
+            }
+        },
+        series: [
+            {
+                name: 'Fatura',
+                type: 'bar',
+                data: dataValues,
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: function (params) {
+                        return `R$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    },
+                    fontSize: 12,
+                    color: '#000'
+                },
+                itemStyle: {
+                    color: '#F003',
+                    borderColor: '#F00'
+                },
+                markLine: {
+                    data: [
+                        {
+                            type: 'average',
+                            name: 'Média da Fatura'
+                        }
+                    ],
+                    lineStyle: {
+                        color: '#F007', 
+                    },
+                    label: {
+                        show: true,
+                        formatter: 'R$ {c}', // Formatação do valor da média
+                        color: '#F00', // Cor do texto da média
+                        fontSize: 8
+                    }
+                }
+            },
+            {
+                name: 'Saldo Restante',
+                type: 'bar',
+                data: dataSaldoValues,
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: function (params) {
+                        return `R$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    },
+                    fontSize: 12,
+                    color: '#000'
+                },
+                itemStyle: {
+                    color: 'rgba(0, 128, 0, .3)',
+                    borderColor: 'rgba(0, 128, 0, 1)'
+                }
+            }
+        ]
+    };
+
+    // Define as opções no gráfico e exibe
+    chart.setOption(chartOptions);
+
+    // Ajusta o gráfico ao redimensionar a tela
+    window.addEventListener("resize", () => {
+        chart.resize();
+    });
+}
+
 // Inicializa os gráficos e dados ao carregar a página
 document.addEventListener("DOMContentLoaded", () => {
     renderGraficoReceitaDespesa();
-    renderGraficoMaioresGastos();
+    renderGraficoFaturaBancariaMensal();
     renderGraficoBancario();
+    renderGraficoMaioresGastos();
     carregarHistorico();
     carregarFaturas();
 });
