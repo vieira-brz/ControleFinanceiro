@@ -513,7 +513,7 @@ async function renderGraficoBancario() {
                     ...item,
                     itemStyle: {
                         color: item.name === 'Inter' ? '#FFA500' : // Laranja para Inter
-                            item.name === 'Will' ? '#FFD700' : // Amarelo para Will
+                            item.name === 'Willbank' ? '#FFD700' : // Amarelo para Will
                                 item.name === 'Nubank' ? '#800080' : // Roxo para Nubank
                                     item.name === 'Familiar' ? '#C0C0C0' : // Cinza para Familiar
                                         '#C0C0C0' // Cinza claro para outros
@@ -589,12 +589,12 @@ async function renderGraficoFaturaBancariaMensal() {
         value: item.value,
         // itemStyle: {
         //     color: item.name === 'Inter' ? 'rgba(255, 165, 0, 0.4)' : // Laranja com opacidade para Inter
-        //         item.name === 'Will' ? 'rgba(255, 215, 0, 0.6)' : // Amarelo com opacidade para Will
+        //         item.name === 'Willbank' ? 'rgba(255, 215, 0, 0.6)' : // Amarelo com opacidade para Willbank
         //         item.name === 'Nubank' ? 'rgba(128, 0, 128, 0.4)' : // Roxo com opacidade para Nubank
         //         item.name === 'Familiar' ? 'rgba(192, 192, 192, 0.4)' : // Cinza com opacidade para Familiar
         //         'rgba(192, 192, 192, 0.4)', // Cor padrão com opacidade para outros
         //     borderColor: item.name === 'Inter' ? '#FFA500' :
-        //         item.name === 'Will' ? '#FFD700' :
+        //         item.name === 'Willbank' ? '#FFD700' :
         //         item.name === 'Nubank' ? '#800080' :
         //         item.name === 'Familiar' ? '#C0C0C0' :
         //         '#C0C0C0' // Cor de borda padrão
