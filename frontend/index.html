@@ -23,6 +23,25 @@
     </header>
 
     <main>
+        <!-- Seção de Saldos -->
+        <section id="saldos">
+            <h2>Análise Mensal</h2>
+            <div class="saldos-row">
+                <div class="saldos-card">
+                    <h3>Receitas: <span id="receita-mensal-atual" style="color:#00a400">...</span></h3>
+                </div>
+                <div class="saldos-card">
+                    <h3>Despesas: <span id="despesa-mensal-atual" style="color:#ff4d4d">...</span></h3>
+                </div>
+                <div class="saldos-card">
+                    <h3>Investimentos: <span id="investimento-mensal-atual" style="color:#4747f1">...</span></h3>
+                </div>
+                <div class="saldos-card">
+                    <h3>Saldo Remanescente:  <span id="saldo-mensal-atual" style="color:rgb(255, 115, 0)">...</span></h3>
+                </div>
+            </div>
+        </section>
+
         <!-- Gráficos -->
         <section id="dashboard">
             <div class="dashboard-row">
@@ -38,15 +57,15 @@
         <!-- Faturas Atuais e Futuras -->
         <div class="flex-mobile-col">
             <section id="faturas">
-                <h2>Faturas</h2>
+                <h2>Saldo Remanescente Mensal</h2>
                 <div class="table-container">
                     <table id="faturas-tabela">
                         <thead>
                             <tr>
                                 <th>Mês</th>
                                 <th>Ano</th>
-                                <th>Despesa</th>
                                 <th>Receita</th>
+                                <th>Despesa</th>
                                 <th>Sobra</th>
                             </tr>
                         </thead>
@@ -59,18 +78,19 @@
 
             <!-- Histórico Mensal com Paginação -->
             <section id="historico-mensal">
-                <h2>Histórico Mensal de Receitas e Despesas</h2>
+                <h2>Controle de Parcelas</h2>
                 <div class="table-container">
                     <table id="historico-tabela">
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Tipo</th>
+                                <th>Encerramento</th>
+                                <!-- <th>Tipo</th> -->
                                 <th>Banco</th>
                                 <th>Descrição</th>
                                 <th>Categoria</th>
-                                <th>Valor</th>
                                 <th>Parcelas</th>
+                                <th>Total</th>
                             </tr>
                         </thead>
                         <tbody id="historico-corpo">

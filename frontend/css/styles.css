@@ -455,3 +455,29 @@ footer p {
 #transacoes-list-section #transacoes-container .transacao-item .buttons button:nth-child(2):hover {
     background-color: #f84040;
 }
+
+/* Saldos */
+#saldos {
+    gap: 20px;
+    width: 95vw;
+    padding: 0 45px;
+}
+
+#saldos > .saldos-row {
+    gap: 20px;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 20px 0 40px 0;
+    justify-content: space-between;
+}
+
+#saldos > .saldos-row .saldos-card {
+    width: 100%;
+    padding: 10px;
+    min-width: 280px;
+    max-width: 400px;
+    border-radius: 4px;
+    background-color: white;
+    border: 1px solid #d3d3d390;
+}

@@ -142,7 +142,7 @@
                         <option value="false">Não</option>
                         <option value="true">Sim</option>
                     </select>
-                </div>
+                </div>                
                 <button type="submit">Cadastrar Transação</button>
             </form>
         </div>
@@ -268,8 +268,8 @@
                 const descricao = document.getElementById("descricao").value;
                 const categoriaId = parseInt(document.getElementById("categoria_id").value);
                 const parcelas = tipo === 'débito' ? 0 : parseInt(document.getElementById("parcelas").value || 0);
-                const fixa = document.getElementById("fixa").checked;
-                const encerrada = document.getElementById("encerrada").checked;
+                const fixa = document.getElementById("fixa").value;
+                const encerrada = document.getElementById("encerrada").value;
 
                 if (tipo === 'receita') {
                     remetente = document.getElementById("remetente").value || 'Indefinido';
@@ -291,7 +291,7 @@
                     categoria_id: categoriaId,
                     parcelas: parcelas,
                     fixa: fixa,
-                    encerrada: !encerrada // Ajuste conforme os valores padrão
+                    encerrada: encerrada // Ajuste conforme os valores padrão
                 };
 
                 try {

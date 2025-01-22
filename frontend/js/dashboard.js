@@ -1,5 +1,42 @@
 import { apiGet } from './api.js';
 
+function estatistica_mensal(transacoes) {
+    // Obtém o mês e o ano atuais
+    const dataAtual = new Date();
+    const mesAtual = dataAtual.getMonth(); // Janeiro = 0
+    const anoAtual = dataAtual.getFullYear(); // Ex.: 2025
+
+    let total_receitas_mes = 0;
+    let total_despesas_mes = 0;
+    let total_investido_mes = 0;
+    let saldo_restante_mes = 0;
+
+    // Filtra as transações do mês atual
+    const transacoesMesAtual = transacoes.filter(transacao => {
+        const dataTransacao = new Date(transacao.data_hora);
+        return dataTransacao.getMonth() === mesAtual && dataTransacao.getFullYear() === anoAtual;
+    });
+
+    // Calcula os totais
+    transacoesMesAtual.forEach(transacao => {
+        if (transacao.tipo === 'receita' && transacao.categoria_id !== 27) {
+            total_receitas_mes += transacao.valor;
+        } else if (transacao.categoria_id === 27) {
+            total_investido_mes += transacao.valor;
+        } else {
+            total_despesas_mes += (transacao.valor / transacao.parcelas);
+        }
+    });
+
+    saldo_restante_mes = total_receitas_mes - total_despesas_mes;
+
+    // Atualiza os valores no DOM
+    document.getElementById('receita-mensal-atual').textContent = total_receitas_mes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('despesa-mensal-atual').textContent = total_despesas_mes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('investimento-mensal-atual').textContent = total_investido_mes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('saldo-mensal-atual').textContent = saldo_restante_mes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 async function renderGraficoReceitaDespesa() {
     const faturas = {}; // Um objeto para agrupar faturas por mês e ano
 
@@ -8,6 +45,8 @@ async function renderGraficoReceitaDespesa() {
 
         // Faz a requisição para obter as transações
         const transacoes = await apiGet("/transacoes/");
+
+        estatistica_mensal(transacoes)
 
         // Filtra as transações fixas e calcula o total
         const valoresFixosDespesa = transacoes
@@ -166,7 +205,7 @@ async function renderGraficoReceitaDespesa() {
                             }
                         ],
                         lineStyle: {
-                            color: '#F007', 
+                            color: '#F007',
                         },
                         label: {
                             show: true,
@@ -300,39 +339,60 @@ async function renderGraficoMaioresGastos() {
     myChart.setOption(option);
 }
 
+function calcularDataEncerramento(dataTransacao, parcelas) {
+    const data = new Date(dataTransacao); // Garante que a data é um objeto Date
+    data.setMonth(data.getMonth() + parcelas); // Adiciona os meses correspondentes
+    return data; // Retorna a nova data
+}
 
 // Função para carregar o histórico com paginação
 async function carregarHistorico() {
     const historicoCorpo = document.getElementById("historico-corpo");
-    historicoCorpo.innerHTML = "";  // Limpa o conteúdo atual
+    historicoCorpo.innerHTML = ""; // Limpa o conteúdo atual
 
     try {
         const categorias = await apiGet("/categorias");
         const transacoes = await apiGet("/transacoes/");
 
-        transacoes.sort((a, b) => b.data_hora.localeCompare(a.data_hora));
-
+        // Calcula a data de encerramento para cada transação
         transacoes.forEach(transacao => {
-            const linha = document.createElement("tr");
+            const dataTransacao = new Date(transacao.data_hora);
 
-            const mesAtual = new Date().getMonth()
-            const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
-            const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
-
-            // Verifica se a data da transação é dentro do mês atual
-            if (mesTransacao >= (mesAtual - 1)) {
-                linha.innerHTML = `
-                    <td>${transacao.fixa ? 'Transação Fixa' : new Date(transacao.data_hora).toLocaleString('pt-BR').split(',')[0]}</td>
-                    <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td>
-                    <td>${transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() ? transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() : 'Eu mesmo'}</td>
-                    <td>${transacao.descricao}</td>
-                    <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
-                    <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
-                    <td>${transacao.parcelas == 0 ? "Sem parcelamento." : transacao.parcelas == 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
-                `;
+            let parcelas = transacao.parcelas
+            if (transacao.fixa) {
+                parcelas = 48
             }
 
-            historicoCorpo.appendChild(linha);
+            transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas); // Adiciona dataEncerramento
+        });
+
+        // Ordena as transações pela data de encerramento
+        transacoes.sort((a, b) => a.dataEncerramento - b.dataEncerramento);
+
+        transacoes.forEach(transacao => {
+            if (transacao.tipo != 'receita') {
+                const linha = document.createElement("tr");
+
+                const mesAtual = new Date().getMonth();
+                const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
+                const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
+
+                // Verifica se a data da transação é dentro do mês atual
+                if (mesTransacao >= (mesAtual - 1)) {
+                    linha.innerHTML = `
+                        <td>${transacao.fixa ? 'Transação Fixa' : dataTransacao.toLocaleString('pt-BR').split(',')[0]}</td>
+                        <td>${transacao.fixa ? '-' : transacao.dataEncerramento.toLocaleString('pt-BR').split(',')[0]}</td>
+                        <!-- <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td> -->
+                        <td>${transacao.destinatario ? transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() : 'Eu mesmo'}</td>
+                        <td>${transacao.descricao}</td>
+                        <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
+                        <td>${(transacao.parcelas === 0 || transacao.fixa) ? "Sem parcelamento." : transacao.parcelas === 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
+                        <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
+                    `;
+                }
+
+                historicoCorpo.appendChild(linha);
+            }
         });
     } catch (error) {
         console.error("Erro ao carregar o histórico:", error);
@@ -428,14 +488,17 @@ async function carregarFaturas() {
         // Adiciona as faturas no DOM
         for (const key in faturas) {
             const fatura = faturas[key]; // Obtém a fatura agrupada
+            const sobra_mensal = receitas - (fatura.total + valores_fixos); // Calcula sobra mensal com base na fatura atual
             const linha = document.createElement("tr"); // Cria uma nova linha na tabela
+
             linha.innerHTML = `
                 <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>
                 <td>${fatura.ano}</td>
+                <td>R$ ${receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td>R$ ${(fatura.total + valores_fixos).toFixed(2).replace('.', ',')}</td>
-                <td>R$ ${receitas}</td>
-                <td>R$ ${(receitas - (fatura.total + valores_fixos)).toFixed(2).replace('.', ',')}</td>
+                <td style="font-weight: 600;color:${sobra_mensal > 0 ? '#00a400' : '#ff4d4d'}">R$ ${sobra_mensal.toFixed(2).replace('.', ',')}</td>
             `;
+
             faturasCorpo.appendChild(linha); // Adiciona a linha à tabela
         }
     } catch (error) {
@@ -600,7 +663,7 @@ async function renderGraficoFaturaBancariaMensal() {
         //         '#C0C0C0' // Cor de borda padrão
         // }
     }));
-    
+
     // Calcula o saldo restante de forma progressiva
     let saldoAtual = DadosSaldo;
     const dataSaldoValues = DadosDespesa.map(item => {
@@ -690,7 +753,7 @@ async function renderGraficoFaturaBancariaMensal() {
                         }
                     ],
                     lineStyle: {
-                        color: '#F007', 
+                        color: '#F007',
                     },
                     label: {
                         show: true,
