@@ -680,7 +680,7 @@ async function renderGraficoFaturaBancariaMensal() {
     const chartOptions = {
         title: {
             text: 'Fatura do Mês por Banco',
-            left: window.innerWidth > 768 ? '40px' : 'center'
+            left: window.innerWidth > 768 ? '40px' : ''
         },
         legend: {
             orient: 'vertical',
