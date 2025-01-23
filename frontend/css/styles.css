@@ -219,6 +219,10 @@ footer p {
         flex-direction: column !important;
     }
 
+    #dashboard > .dashboard-row:nth-child(2) {
+        margin-top: 20px;
+    }
+
     .forms-container {
         display: flex !important;
         flex-direction: column !important;
