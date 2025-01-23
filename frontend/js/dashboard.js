@@ -360,7 +360,7 @@ async function carregarHistorico() {
 
             let parcelas = transacao.parcelas
             if (transacao.fixa) {
-                parcelas = 48
+                parcelas = 0
             }
 
             transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas); // Adiciona dataEncerramento
@@ -376,6 +376,8 @@ async function carregarHistorico() {
                 const mesAtual = new Date().getMonth();
                 const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
                 const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
+
+                linha.style.backgroundColor = transacao.fixa ? '#ff990010' : ''
 
                 // Verifica se a data da transação é dentro do mês atual
                 if (mesTransacao >= (mesAtual - 1)) {
@@ -490,6 +492,8 @@ async function carregarFaturas() {
             const fatura = faturas[key]; // Obtém a fatura agrupada
             const sobra_mensal = receitas - (fatura.total + valores_fixos); // Calcula sobra mensal com base na fatura atual
             const linha = document.createElement("tr"); // Cria uma nova linha na tabela
+
+            linha.style.backgroundColor = sobra_mensal > 0 ? '#00a40010' : '#ff4d4d10'
 
             linha.innerHTML = `
                 <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>

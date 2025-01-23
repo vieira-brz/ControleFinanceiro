@@ -110,7 +110,7 @@ main {
 
 #historico-mensal,
 #faturas {
-    padding: 20px;
+    padding: 10px;
     border-radius: 15px;
 }
 
@@ -201,7 +201,7 @@ footer p {
     }
 
     .flex-mobile-col {
-        width: 50% !important;
+        width: 62% !important;
         flex-direction: column !important;
     }
 
@@ -215,6 +215,7 @@ footer p {
     }
     
     #dashboard > .dashboard-row {
+        gap: 20px;
         flex-direction: column !important;
     }
 
@@ -258,6 +259,10 @@ footer p {
     #historico-mensal h2,
     #faturas h2 {
         font-size: 1.2em !important;
+    }
+
+    table {
+        font-size: 12px;
     }
 }
 
@@ -477,7 +482,10 @@ footer p {
     padding: 10px;
     min-width: 280px;
     max-width: 400px;
-    border-radius: 4px;
-    background-color: white;
-    border: 1px solid #d3d3d390;
+    border-radius: 5px;
+    background-color: #333333;
+}
+
+#saldos > .saldos-row .saldos-card h3 {
+    color: white;
 }
