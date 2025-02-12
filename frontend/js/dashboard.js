@@ -12,19 +12,27 @@ function estatistica_mensal(transacoes) {
     let saldo_restante_mes = 0;
 
     // Filtra as transações do mês atual
-    const transacoesMesAtual = transacoes.filter(transacao => {
-        const dataTransacao = new Date(transacao.data_hora);
-        return dataTransacao.getMonth() === mesAtual && dataTransacao.getFullYear() === anoAtual;
-    });
-
-    // Calcula os totais
-    transacoesMesAtual.forEach(transacao => {
+    transacoes.forEach(transacao => {
         if (transacao.tipo === 'receita' && transacao.categoria_id !== 27) {
             total_receitas_mes += transacao.valor;
-        } else if (transacao.categoria_id === 27) {
+        } 
+        else if (transacao.categoria_id === 27) {
             total_investido_mes += transacao.valor;
-        } else {
-            total_despesas_mes += (transacao.valor / transacao.parcelas);
+        } 
+        else {
+            const dataTransacao = new Date(transacao.data_hora);
+            const mesTransacao = new Date(transacao.data_hora).getMonth();
+
+            let parcelas = transacao.parcelas
+            if (transacao.fixa) {
+                parcelas = 1
+            }
+
+            transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas);
+
+            if ((transacao.tipo !== 'receita' && mesAtual === mesTransacao) || (transacao.tipo !== 'receita' && transacao.dataEncerramento >= dataTransacao) || (transacao.tipo !== 'receita' && transacao.fixa == true)) {
+                total_despesas_mes += (transacao.valor / transacao.parcelas);
+            }
         }
     });
 
