@@ -611,8 +611,8 @@ async function renderGraficoFaturaBancariaMensal() {
             const mesAtual = new Date().getMonth();
 
             transacoes.forEach(transacao => {
-                const mesTransacao = new Date(transacao.data_hora).getMonth();
                 const dataTransacao = new Date(transacao.data_hora);
+                const mesTransacao = new Date(transacao.data_hora).getMonth();
 
                 let parcelas = transacao.parcelas
                 if (transacao.fixa) {
@@ -643,7 +643,10 @@ async function renderGraficoFaturaBancariaMensal() {
 
             transacoes.forEach(transacao => {
                 const mesTransacao = new Date(transacao.data_hora).getMonth();
-                if (transacao.tipo === 'receita' && mesAtual === mesTransacao) {
+    
+                transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas);
+
+                if ((transacao.tipo === 'receita' && mesAtual === mesTransacao) || (transacao.tipo === 'receita' && transacao.fixa == true)) {
                     receita += transacao.valor;
                 }
             });
