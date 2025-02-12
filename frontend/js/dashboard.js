@@ -621,7 +621,7 @@ async function renderGraficoFaturaBancariaMensal() {
     
                 transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas);
 
-                if ((transacao.tipo !== 'receita' && mesAtual === mesTransacao) || (transacao.tipo !== 'receita' && transacao.dataEncerramento >= transacao.data_hora)) {
+                if ((transacao.tipo !== 'receita' && mesAtual === mesTransacao) || (transacao.tipo !== 'receita' && transacao.dataEncerramento >= dataTransacao) || (transacao.tipo !== 'receita' && transacao.fixa == true)) {
                     const destinatario = transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() || 'Outro';
                     destinatariosMap[destinatario] = (destinatariosMap[destinatario] || 0) + (transacao.valor / (transacao.parcelas || 1));
                 }
@@ -644,9 +644,7 @@ async function renderGraficoFaturaBancariaMensal() {
             transacoes.forEach(transacao => {
                 const mesTransacao = new Date(transacao.data_hora).getMonth();
     
-                transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas);
-
-                if ((transacao.tipo === 'receita' && mesAtual === mesTransacao) || (transacao.tipo === 'receita' && transacao.fixa == true)) {
+                if (transacao.tipo === 'receita') {
                     receita += transacao.valor;
                 }
             });
