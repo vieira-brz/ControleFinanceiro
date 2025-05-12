@@ -35,7 +35,6 @@ function estatistica_mensal(transacoes) {
             }
         }
     });
-    alert(total_despesas_mes)
 
     saldo_restante_mes = total_receitas_mes - total_despesas_mes;
 
