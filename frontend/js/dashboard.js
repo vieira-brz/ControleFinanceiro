@@ -31,10 +31,11 @@ function estatistica_mensal(transacoes) {
             transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas);
 
             if ((transacao.tipo !== 'receita' && mesAtual === mesTransacao) || (transacao.tipo !== 'receita' && transacao.dataEncerramento >= dataTransacao) || (transacao.tipo !== 'receita' && transacao.fixa == true)) {
-                total_despesas_mes += (transacao.valor / transacao.parcelas);
+                total_despesas_mes += (transacao.valor / parcelas);
             }
         }
     });
+    alert(total_despesas_mes)
 
     saldo_restante_mes = total_receitas_mes - total_despesas_mes;
 
@@ -388,18 +389,18 @@ async function carregarHistorico() {
                 linha.style.backgroundColor = transacao.fixa ? '#ff990010' : ''
 
                 // Verifica se a data da transação é dentro do mês atual
-                if (mesTransacao >= (mesAtual - 1)) {
-                    linha.innerHTML = `
-                        <td>${transacao.fixa ? 'Transação Fixa' : dataTransacao.toLocaleString('pt-BR').split(',')[0]}</td>
-                        <td>${transacao.fixa ? '-' : transacao.dataEncerramento.toLocaleString('pt-BR').split(',')[0]}</td>
-                        <!-- <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td> -->
-                        <td>${transacao.destinatario ? transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() : 'Eu mesmo'}</td>
-                        <td>${transacao.descricao}</td>
-                        <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
-                        <td>${(transacao.parcelas === 0 || transacao.fixa) ? "Sem parcelamento." : transacao.parcelas === 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
-                        <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
-                    `;
-                }
+                // if (mesTransacao >= (mesAtual - 1)) {
+                linha.innerHTML = `
+                    <td>${transacao.fixa ? 'Transação Fixa' : dataTransacao.toLocaleString('pt-BR').split(',')[0]}</td>
+                    <td>${transacao.fixa ? '-' : transacao.dataEncerramento.toLocaleString('pt-BR').split(',')[0]}</td>
+                    <!-- <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td> -->
+                    <td>${transacao.destinatario ? transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() : 'Eu mesmo'}</td>
+                    <td>${transacao.descricao}</td>
+                    <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
+                    <td>${(transacao.parcelas === 0 || transacao.fixa) ? "Sem parcelamento." : transacao.parcelas === 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
+                    <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
+                `;
+                // }
 
                 historicoCorpo.appendChild(linha);
             }
