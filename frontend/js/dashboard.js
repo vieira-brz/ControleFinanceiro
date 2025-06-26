@@ -46,191 +46,158 @@ function estatistica_mensal(transacoes) {
 }
 
 async function renderGraficoReceitaDespesa() {
-    const faturas = {}; // Um objeto para agrupar faturas por mês e ano
+    const faturas = {};
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth() + 1;
+    const anoAtual = hoje.getFullYear();
 
     try {
-        let ultimo_mes = 0
-
-        // Faz a requisição para obter as transações
         const transacoes = await apiGet("/transacoes/");
+        estatistica_mensal(transacoes);
 
-        estatistica_mensal(transacoes)
-
-        // Filtra as transações fixas e calcula o total
-        const valoresFixosDespesa = transacoes
-            .filter(transaction => (transaction.fixa === true && transaction.tipo != 'receita'))
-            .reduce((total, transaction) => total + parseFloat(transaction.valor), 0);
-
-        // Agrupa transações por mês e ano
         transacoes.forEach(transacao => {
-            const mesAtual = new Date().getMonth()
-            const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
-            const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
+            const data = new Date(transacao.data_hora);
+            const isReceita = transacao.remetente !== null;
+            const isFixa = transacao.fixa === true;
+            const valorParcela = parseFloat(transacao.valor) / (transacao.parcelas || 1);
 
-            if (mesTransacao >= (mesAtual - 1)) {
-                const dataTransacao = new Date(transacao.data_hora); // Converte a data da transação
+            if (isFixa && isReceita) {
+                const metade = valorParcela / 2;
 
-                let diaTransacao = dataTransacao.getDate(); // Dia da transação
-                diaTransacao = diaTransacao < 9 ? `0${diaTransacao}` : diaTransacao
+                const chave15 = `15/${mesAtual}/${anoAtual}`;
+                if (!faturas[chave15]) faturas[chave15] = { dia: 15, mes: mesAtual, ano: anoAtual, receita: 0, despesa: 0 };
+                faturas[chave15].receita += metade;
 
-                const mesTransacao = dataTransacao.getMonth() + 1; // Mês da transação (1-12)
-                const anoTransacao = dataTransacao.getFullYear(); // Ano da transação
+                const chave28 = `28/${mesAtual}/${anoAtual}`;
+                if (!faturas[chave28]) faturas[chave28] = { dia: 28, mes: mesAtual, ano: anoAtual, receita: 0, despesa: 0 };
+                faturas[chave28].receita += metade;
 
-                const chaveFatura = `${diaTransacao}/${mesTransacao}/${anoTransacao}`; // Chave para identificar a fatura
+                return;
+            }
 
-                if (!faturas[chaveFatura]) {
-                    // Inicializa a fatura se não existir
-                    faturas[chaveFatura] = {
-                        dia: diaTransacao,
-                        mes: mesTransacao,
-                        ano: anoTransacao,
-                        receita: 0,
-                        despesa: 0
-                    };
-                }
+            if (isFixa && !isReceita) {
+                const chave = `15/${mesAtual}/${anoAtual}`;
+                if (!faturas[chave]) faturas[chave] = { dia: 15, mes: mesAtual, ano: anoAtual, receita: 0, despesa: 0 };
+                faturas[chave].despesa += valorParcela;
+                return;
+            }
 
-                // Se a transação for fixa
-                if (transacao.fixa) {
-                    // Adiciona valores fixos à despesa se não for o mesmo mês
-                    if (ultimo_mes !== mesTransacao) {
-                        faturas[chaveFatura].despesa += valoresFixosDespesa; // Adiciona valores fixos à despesa
-                    }
+            const dia = isReceita ? 28 : (data.getDate() <= 15 ? 15 : 28);
+            const chave = `${dia}/${mesAtual}/${anoAtual}`;
+            if (!faturas[chave]) faturas[chave] = { dia, mes: mesAtual, ano: anoAtual, receita: 0, despesa: 0 };
 
-                    // Para salário 1 no dia 15
-                    const chaveFaturaSalario1 = `15/${mesTransacao}/${anoTransacao}`;
-
-                    if (!faturas[chaveFaturaSalario1]) {
-                        const salario1 = transacoes.find(transaction => transaction.id === 31);
-                        faturas[chaveFaturaSalario1] = {
-                            dia: '15',
-                            mes: mesTransacao,
-                            ano: anoTransacao,
-                            receita: salario1 ? parseFloat(salario1.valor) : 0, // Adiciona valores fixos à receita
-                            despesa: 0
-                        };
-                    }
-
-                    // Para salário 2 no dia 28
-                    const chaveFaturaSalario2 = `28/${mesTransacao}/${anoTransacao}`;
-
-                    if (!faturas[chaveFaturaSalario2]) {
-
-                        const salario2 = transacoes.find(transaction => transaction.id === 32);
-                        faturas[chaveFaturaSalario2] = {
-                            dia: '28',
-                            mes: mesTransacao,
-                            ano: anoTransacao,
-                            receita: salario2 ? parseFloat(salario2.valor) : 0, // Adiciona valores fixos à receita
-                            despesa: 0
-                        };
-                    }
-                }
-                else {
-                    // Adiciona o valor da transação à receita ou despesa
-                    if (transacao.remetente == null) { // Se não tem remetente, é uma despesa
-                        faturas[chaveFatura].despesa += parseFloat(transacao.valor / transacao.parcelas);
-                    } else { // Caso contrário, é uma receita
-                        faturas[chaveFatura].receita += parseFloat(transacao.valor / transacao.parcelas);
-                    }
-                }
-
-                ultimo_mes = mesTransacao
+            if (isReceita) {
+                faturas[chave].receita += valorParcela;
+            } else {
+                faturas[chave].despesa += valorParcela;
             }
         });
 
-        // Supondo que `faturas` seja um objeto com chaves no formato "dia/mês/ano"
-        const faturasArray = Object.entries(faturas) // Converte o objeto em um array de pares [chave, valor]
-            .map(([key, value]) => ({ key, ...value })) // Mapeia para um novo objeto contendo a chave e os valores
-            .sort((a, b) => {
-                const dateA = new Date(`${a.key.split('/')[2]}-${a.key.split('/')[1]}-${a.key.split('/')[0]}`);
-                const dateB = new Date(`${b.key.split('/')[2]}-${b.key.split('/')[1]}-${b.key.split('/')[0]}`);
-                return dateA - dateB; // Ordena por data
-            });
+        const faturasArray = Object.entries(faturas)
+            .map(([key, value]) => ({ key, ...value }))
+            .sort((a, b) => a.dia - b.dia);
 
-        // Renderiza o gráfico com ECharts
         const chartDom = document.getElementById('grafico-receita-despesa');
         const myChart = echarts.init(chartDom);
+
         const option = {
             title: {
                 text: 'Receita vs Despesa',
-                left: window.innerWidth > 768 ? '40px' : '0' // Define a margem direita com base na largura da tela
+                left: window.innerWidth > 768 ? '40px' : ''
+            },
+            legend: {
+                orient: 'vertical',
+                right: window.innerWidth > 768 ? '80px' : '0',
+                top: '0%',
+                itemGap: 15
             },
             tooltip: {
                 trigger: 'axis',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)', // Fundo claro para o tooltip
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 padding: [5, 10],
-                confine: true,  // Garante que o tooltip não saia do contêiner, mas você pode definir como `false` se preferir
-                extraCssText: 'width: fit-content; white-space: nowrap;', // Ajusta ao conteúdo e evita quebra de linha
-                formatter: function (params) {
-                    let count = 0
-                    let tooltipContent = '';
-                    params.forEach(item => {
-                        let mbottom = count == 0 ? 10 : 0
-
-                        tooltipContent += `<div style="white-space: nowrap; margin-bottom: ${mbottom}px;">
-                            ${item.seriesName} <br>
-                            ${item.name} : R$ ${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>`;
-
-                        count++
-                    });
-                    return tooltipContent;
-                },
+                confine: true,
+                extraCssText: 'width: fit-content; white-space: nowrap;',
                 axisPointer: {
                     type: 'cross'
                 },
-            },
-            legend: {
-                data: ['Receita', 'Despesa'],
-                orient: 'vertical',
-                right: window.innerWidth > 768 ? '80px' : '0' // Define a margem direita com base na largura da tela
+                formatter: function (params) {
+                    let tooltipContent = '';
+                    params.forEach((item, index) => {
+                        const mbottom = index === 0 ? 10 : 0;
+                        tooltipContent += `
+                            <div style="white-space: nowrap; margin-bottom: ${mbottom}px;">
+                                ${item.seriesName} <br>
+                                R$ ${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>`;
+                    });
+                    return tooltipContent;
+                }
             },
             xAxis: {
                 type: 'category',
-                data: Object.keys(faturasArray).map(key => faturasArray[key].key) // Formata os dados do eixo X
+                data: faturasArray.map(f => `${f.dia}/${f.mes}/${f.ano}`),
+                axisLabel: {
+                    interval: 0,
+                    rotate: window.innerWidth > 768 ? 0 : 30
+                },
+                name: "Data"
             },
             yAxis: {
-                type: 'value'
+                type: 'value',
+                name: "Valor (R$)",
+                axisLabel: {
+                    formatter: value => `R$ ${value.toLocaleString('pt-BR')}`
+                }
             },
             series: [
                 {
                     name: 'Receita',
-                    type: 'line',
-                    data: Object.values(faturasArray).map(f => f.receita), // Usando as receitas
-                    itemStyle: { color: 'green' },
-                    lineStyle: { color: 'green' },
-                    areaStyle: { color: 'rgba(0, 128, 0, 0.05)' } // Fundo verde com opacidade
+                    type: 'bar',
+                    data: faturasArray.map(f => f.receita),
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: p => `R$ ${p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                        fontSize: 12,
+                        color: '#000'
+                    },
+                    itemStyle: {
+                        color: 'rgba(0, 128, 0, .3)',
+                        borderColor: 'rgba(0, 128, 0, 1)'
+                    }
                 },
                 {
                     name: 'Despesa',
-                    type: 'line',
-                    data: Object.values(faturasArray).map(f => f.despesa), // Usando as despesas
+                    type: 'bar',
+                    data: faturasArray.map(f => f.despesa),
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: p => `R$ ${p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                        fontSize: 12,
+                        color: '#000'
+                    },
+                    itemStyle: {
+                        color: '#F003',
+                        borderColor: '#F00'
+                    },
                     markLine: {
-                        data: [
-                            {
-                                type: 'average',
-                                name: 'Média de Despesa'
-                            }
-                        ],
-                        lineStyle: {
-                            color: '#F007',
-                        },
+                        data: [{ type: 'average', name: 'Média de Despesa' }],
+                        lineStyle: { color: '#F007' },
                         label: {
                             show: true,
-                            formatter: 'R$ {c}', // Formatação do valor da média
-                            color: '#F00', // Cor do texto da média
+                            formatter: 'R$ {c}',
+                            color: '#F00',
                             fontSize: 8
                         }
-                    },
-                    itemStyle: { color: 'red' },
-                    lineStyle: { color: 'red' },
-                    areaStyle: { color: 'rgba(255, 0, 0, 0.05)' } // Fundo vermelho com opacidade
+                    }
                 }
             ]
         };
+
         myChart.setOption(option);
     } catch (error) {
-        console.error("Erro ao carregar as faturas:", error); // Tratamento de erro caso a requisição falhe
+        console.error("Erro ao carregar as faturas:", error);
     }
 }
 
@@ -381,25 +348,32 @@ async function carregarHistorico() {
             if (transacao.tipo != 'receita') {
                 const linha = document.createElement("tr");
 
-                const mesAtual = new Date().getMonth();
-                const dataTransacao = new Date(transacao.data_hora); // Converte a data para objeto Date
-                const mesTransacao = dataTransacao.getMonth(); // Obtém o mês (0-11)
+                const dataAtual = new Date();
+                const dataInicio = new Date(transacao.data_hora);
+                const parcelasPagas = Math.max(0, (dataAtual.getFullYear() - dataInicio.getFullYear()) * 12 + (dataAtual.getMonth() - dataInicio.getMonth()));
+
+                const parcelasExibidas = (transacao.parcelas === 0 || transacao.fixa)
+                    ? "Sem parcelamento."
+                    : transacao.parcelas === 1
+                        ? "1 parcela na fatura atual."
+                        : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`;
+
+                const parcelasPagasExibidas = (transacao.parcelas === 0 || transacao.fixa)
+                    ? "-"
+                    : Math.min(parcelasPagas, transacao.parcelas); // Garante que não ultrapasse o total
 
                 linha.style.backgroundColor = transacao.fixa ? '#ff990010' : ''
 
-                // Verifica se a data da transação é dentro do mês atual
-                // if (mesTransacao >= (mesAtual - 1)) {
                 linha.innerHTML = `
-                    <td>${transacao.fixa ? 'Transação Fixa' : dataTransacao.toLocaleString('pt-BR').split(',')[0]}</td>
+                    <td>${transacao.fixa ? 'Transação Fixa' : dataInicio.toLocaleString('pt-BR').split(',')[0]}</td>
                     <td>${transacao.fixa ? '-' : transacao.dataEncerramento.toLocaleString('pt-BR').split(',')[0]}</td>
-                    <!-- <td>${transacao.tipo.charAt(0).toUpperCase() + transacao.tipo.slice(1).toLowerCase()}</td> -->
                     <td>${transacao.destinatario ? transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() : 'Eu mesmo'}</td>
                     <td>${transacao.descricao}</td>
                     <td>${categorias.filter(cat => cat.id === transacao.categoria_id)[0]?.nome || 'Sem Categoria'}</td>
-                    <td>${(transacao.parcelas === 0 || transacao.fixa) ? "Sem parcelamento." : transacao.parcelas === 1 ? "1 parcela na fatura atual." : `${transacao.parcelas} de ${(transacao.valor / transacao.parcelas).toFixed(2).replace('.', ',')}`}</td>
+                    <td>${parcelasExibidas}</td>
+                    <td>${parcelasPagasExibidas}</td>
                     <td>R$ ${transacao.valor.toFixed(2).replace('.', ',')}</td>
                 `;
-                // }
 
                 historicoCorpo.appendChild(linha);
             }
@@ -556,6 +530,7 @@ async function renderGraficoBancario() {
             orient: 'horizontal',
             left: 'center',
             top: '40px',
+            show: false, // Desabilita a legenda para telas menores
         },
         tooltip: {
             confine: true,  // Mantém o tooltip dentro dos limites do contêiner
@@ -572,17 +547,23 @@ async function renderGraficoBancario() {
         },
         series: [
             {
-                name: 'Valor',
+                name: 'Gastos',
                 type: 'pie',
-                radius: '50%',
                 radius: ['30%', '55%'],
                 label: {
                     show: true,
+                    position: 'outside',
                     formatter: function (params) {
-                        return `${params.name}\n\nR$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n${params.percent}%`;
+                        return `\n${params.name}\n\nR$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                     },
                     fontSize: 12,
-                    color: '#333'
+                    color: '#333',
+                    distance: 15 // Aumenta o espaçamento entre o rótulo e o gráfico
+                },
+                labelLine: {
+                    show: true,
+                    length: 30, // Comprimento da linha que conecta ao gráfico
+                    length2: 10 // Segundo segmento da linha
                 },
                 data: chartData.map(item => ({
                     ...item,
@@ -594,6 +575,12 @@ async function renderGraficoBancario() {
                                         '#C0C0C0' // Cinza claro para outros
                     }
                 })),
+                emphasis: {
+                    itemStyle: {
+                        border: 1,
+                        borderColor: "#fff",
+                    }
+                }
             }
         ]
     };
