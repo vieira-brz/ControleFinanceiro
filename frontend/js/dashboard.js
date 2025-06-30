@@ -15,10 +15,10 @@ function estatistica_mensal(transacoes) {
     transacoes.forEach(transacao => {
         if (transacao.tipo === 'receita' && transacao.categoria_id !== 27) {
             total_receitas_mes += transacao.valor;
-        } 
+        }
         else if (transacao.categoria_id === 27) {
             total_investido_mes += transacao.valor;
-        } 
+        }
         else {
             const dataTransacao = new Date(transacao.data_hora);
             const mesTransacao = new Date(transacao.data_hora).getMonth();
@@ -191,6 +191,22 @@ async function renderGraficoReceitaDespesa() {
                             fontSize: 8
                         }
                     }
+                },
+                {
+                    name: 'Sobra',
+                    type: 'bar',
+                    data: faturasArray.map(f => f.receita - f.despesa),
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: p => `R$ ${p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                        fontSize: 12,
+                        color: '#000'
+                    },
+                    itemStyle: {
+                        color: 'rgba(0, 0, 255, 0.2)',
+                        borderColor: 'rgba(0, 0, 255, 0.8)'
+                    }
                 }
             ]
         };
@@ -350,7 +366,13 @@ async function carregarHistorico() {
 
                 const dataAtual = new Date();
                 const dataInicio = new Date(transacao.data_hora);
-                const parcelasPagas = Math.max(0, (dataAtual.getFullYear() - dataInicio.getFullYear()) * 12 + (dataAtual.getMonth() - dataInicio.getMonth()));
+
+                // Calcula quantas parcelas já foram pagas com base no mês/ano
+                let parcelasPagas = (dataAtual.getFullYear() - dataInicio.getFullYear()) * 12 +
+                    (dataAtual.getMonth() - dataInicio.getMonth()) + 1;
+
+                // Garante que não ultrapasse o total de parcelas e não fique negativo
+                parcelasPagas = Math.max(0, Math.min(parcelasPagas, transacao.parcelas));
 
                 const parcelasExibidas = (transacao.parcelas === 0 || transacao.fixa)
                     ? "Sem parcelamento."
@@ -469,23 +491,32 @@ async function carregarFaturas() {
             }
         });
 
-        // Adiciona as faturas no DOM
+        const mesAtual = new Date().getMonth() + 1;
+        const anoAtual = new Date().getFullYear();
+
+        // Adiciona as faturas no DOM, apenas a partir do mês atual
         for (const key in faturas) {
-            const fatura = faturas[key]; // Obtém a fatura agrupada
-            const sobra_mensal = receitas - (fatura.total + valores_fixos); // Calcula sobra mensal com base na fatura atual
-            const linha = document.createElement("tr"); // Cria uma nova linha na tabela
+            const fatura = faturas[key];
 
-            linha.style.backgroundColor = sobra_mensal > 0 ? '#00a40010' : '#ff4d4d10'
+            if (
+                fatura.ano > anoAtual ||
+                (fatura.ano === anoAtual && fatura.mes >= mesAtual)
+            ) {
+                const sobra_mensal = receitas - (fatura.total + valores_fixos);
+                const linha = document.createElement("tr");
 
-            linha.innerHTML = `
-                <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>
-                <td>${fatura.ano}</td>
-                <td>R$ ${receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td>R$ ${(fatura.total + valores_fixos).toFixed(2).replace('.', ',')}</td>
-                <td style="font-weight: 600;color:${sobra_mensal > 0 ? '#00a400' : '#ff4d4d'}">R$ ${sobra_mensal.toFixed(2).replace('.', ',')}</td>
-            `;
+                linha.style.backgroundColor = sobra_mensal > 0 ? '#00a40010' : '#ff4d4d10';
 
-            faturasCorpo.appendChild(linha); // Adiciona a linha à tabela
+                linha.innerHTML = `
+                    <td>${fatura.mes < 10 ? '0' + fatura.mes : fatura.mes} - ${meses[fatura.mes]}</td>
+                    <td>${fatura.ano}</td>
+                    <td>R$ ${receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>R$ ${(fatura.total + valores_fixos).toFixed(2).replace('.', ',')}</td>
+                    <td style="font-weight: 600;color:${sobra_mensal > 0 ? '#00a400' : '#ff4d4d'}">R$ ${sobra_mensal.toFixed(2).replace('.', ',')}</td>
+                `;
+
+                faturasCorpo.appendChild(linha);
+            }
         }
     } catch (error) {
         console.error("Erro ao carregar as faturas:", error); // Tratamento de erro caso a requisição falhe
@@ -519,11 +550,16 @@ async function renderGraficoBancario() {
     }
 
     const chartData = await fetchData();
+    const valorTotal = chartData.reduce((acc, item) => acc + item.value, 0);
 
     const chartOptions = {
         title: {
             text: 'Faturas por Banco',
-            left: 'center'
+            left: 'center',
+            subtext: `Total de R$ ${valorTotal.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })} pendente de quitação`,
         },
         legend: {
             // show: window.innerWidth > 768,  // Exibe a legenda apenas para telas maiores que 768px
@@ -595,10 +631,8 @@ async function renderGraficoBancario() {
 
 // Função para renderizar o gráfico de fatura por banco usando ECharts
 async function renderGraficoFaturaBancariaMensal() {
-    // Inicializa o gráfico no elemento com o ID 'grafico-fatura-banco-mes'
     const chart = echarts.init(document.getElementById("grafico-fatura-banco-mes"));
 
-    // Função para buscar e processar os dados de transações de despesas
     async function fetchDataDespesa() {
         try {
             const transacoes = await apiGet("/transacoes/");
@@ -607,17 +641,16 @@ async function renderGraficoFaturaBancariaMensal() {
 
             transacoes.forEach(transacao => {
                 const dataTransacao = new Date(transacao.data_hora);
-                const mesTransacao = new Date(transacao.data_hora).getMonth();
+                const mesTransacao = dataTransacao.getMonth();
+                let parcelas = transacao.fixa ? 1 : transacao.parcelas;
 
-                let parcelas = transacao.parcelas
-                if (transacao.fixa) {
-                    parcelas = 1
-                }
-    
                 transacao.dataEncerramento = calcularDataEncerramento(dataTransacao, parcelas);
 
-                if ((transacao.tipo !== 'receita' && mesAtual === mesTransacao) || (transacao.tipo !== 'receita' && transacao.dataEncerramento >= dataTransacao) || (transacao.tipo !== 'receita' && transacao.fixa == true)) {
-                    const destinatario = transacao.destinatario.charAt(0).toUpperCase() + transacao.destinatario.slice(1).toLowerCase() || 'Outro';
+                if ((transacao.tipo !== 'receita' && mesAtual === mesTransacao) ||
+                    (transacao.tipo !== 'receita' && transacao.dataEncerramento >= dataTransacao) ||
+                    (transacao.tipo !== 'receita' && transacao.fixa)) {
+
+                    const destinatario = transacao.destinatario?.charAt(0).toUpperCase() + transacao.destinatario?.slice(1).toLowerCase() || 'Outro';
                     destinatariosMap[destinatario] = (destinatariosMap[destinatario] || 0) + (transacao.valor / (transacao.parcelas || 1));
                 }
             });
@@ -629,59 +662,31 @@ async function renderGraficoFaturaBancariaMensal() {
         }
     }
 
-    // Função para buscar e processar os dados de transações de receitas
     async function fetchDataReceita() {
         try {
             const transacoes = await apiGet("/transacoes/");
-            const mesAtual = new Date().getMonth();
-            let receita = 0;
-
-            transacoes.forEach(transacao => {
-                const mesTransacao = new Date(transacao.data_hora).getMonth();
-    
-                if (transacao.tipo === 'receita') {
-                    receita += transacao.valor;
-                }
-            });
-
-            return receita;
+            return transacoes
+                .filter(t => t.tipo === 'receita')
+                .reduce((acc, curr) => acc + curr.valor, 0);
         } catch (error) {
             console.error("Erro ao buscar dados de transações:", error);
             return 0;
         }
     }
 
-    // Busca e processa os dados de despesas e receitas
     const DadosDespesa = await fetchDataDespesa();
-    let DadosSaldo = await fetchDataReceita();
+    const DadosSaldoTotal = await fetchDataReceita();
 
-    // Extrai os rótulos (bancos) e valores para o gráfico
     const labels = DadosDespesa.map(item => item.name);
-    const dataValues = DadosDespesa.map(item => ({
-        value: item.value,
-        // itemStyle: {
-        //     color: item.name === 'Inter' ? 'rgba(255, 165, 0, 0.4)' : // Laranja com opacidade para Inter
-        //         item.name === 'Willbank' ? 'rgba(255, 215, 0, 0.6)' : // Amarelo com opacidade para Willbank
-        //         item.name === 'Nubank' ? 'rgba(128, 0, 128, 0.4)' : // Roxo com opacidade para Nubank
-        //         item.name === 'Familiar' ? 'rgba(192, 192, 192, 0.4)' : // Cinza com opacidade para Familiar
-        //         'rgba(192, 192, 192, 0.4)', // Cor padrão com opacidade para outros
-        //     borderColor: item.name === 'Inter' ? '#FFA500' :
-        //         item.name === 'Willbank' ? '#FFD700' :
-        //         item.name === 'Nubank' ? '#800080' :
-        //         item.name === 'Familiar' ? '#C0C0C0' :
-        //         '#C0C0C0' // Cor de borda padrão
-        // }
-    }));
+    const dataValues = DadosDespesa.map(item => ({ value: item.value }));
 
-    // Calcula o saldo restante de forma progressiva
-    let saldoAtual = DadosSaldo;
+    let saldoAtual = DadosSaldoTotal;
     const dataSaldoValues = DadosDespesa.map(item => {
         const saldoRestante = saldoAtual - item.value;
         saldoAtual -= item.value;
-        return { value: saldoRestante };
+        return saldoRestante;
     });
 
-    // Configuração do gráfico de barras para ECharts
     const chartOptions = {
         title: {
             text: 'Fatura do Mês por Banco',
@@ -691,32 +696,39 @@ async function renderGraficoFaturaBancariaMensal() {
             orient: 'vertical',
             right: window.innerWidth > 768 ? '80px' : '0',
             top: '0%',
-            itemGap: 15
+            itemGap: 15,
+            data: [
+                {
+                    name: 'Fatura',
+                    icon: 'rect',
+                    itemStyle: {
+                        color: 'rgba(255, 0, 0, 0.2)'
+                    }
+                },
+                {
+                    name: 'Saldo Restante',
+                    icon: 'rect',
+                    itemStyle: {
+                        color: 'rgba(0, 0, 255, 0.2)'
+                    }
+                }
+            ]
         },
         tooltip: {
             trigger: 'axis',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)', // Fundo claro para o tooltip
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
             padding: [5, 10],
-            confine: true,  // Garante que o tooltip não saia do contêiner, mas você pode definir como `false` se preferir
-            extraCssText: 'width: fit-content; white-space: nowrap;', // Ajusta ao conteúdo e evita quebra de linha
+            confine: true,
+            extraCssText: 'width: fit-content; white-space: nowrap;',
             formatter: function (params) {
-                let count = 0
-                let tooltipContent = '';
-                params.forEach(item => {
-                    let mbottom = count == 0 ? 10 : 0
-
-                    tooltipContent += `<div style="white-space: nowrap; margin-bottom: ${mbottom}px;">
+                return params.map((item, idx) => `
+                    <div style="white-space: nowrap; margin-bottom: ${idx === 0 ? 10 : 0}px;">
                         ${item.seriesName} <br>
                         R$ ${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>`;
-
-                    count++
-                });
-                return tooltipContent;
+                    </div>
+                `).join('');
             },
-            axisPointer: {
-                type: 'cross'
-            },
+            axisPointer: { type: 'cross' }
         },
         xAxis: {
             type: 'category',
@@ -731,9 +743,7 @@ async function renderGraficoFaturaBancariaMensal() {
             type: 'value',
             name: "Valor (R$)",
             axisLabel: {
-                formatter: function (value) {
-                    return `R$ ${value.toLocaleString('pt-BR')}`;
-                }
+                formatter: value => `R$ ${value.toLocaleString('pt-BR')}`
             }
         },
         series: [
@@ -744,9 +754,7 @@ async function renderGraficoFaturaBancariaMensal() {
                 label: {
                     show: true,
                     position: 'top',
-                    formatter: function (params) {
-                        return `R$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    },
+                    formatter: p => `R$ ${p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                     fontSize: 12,
                     color: '#000'
                 },
@@ -755,19 +763,12 @@ async function renderGraficoFaturaBancariaMensal() {
                     borderColor: '#F00'
                 },
                 markLine: {
-                    data: [
-                        {
-                            type: 'average',
-                            name: 'Média da Fatura'
-                        }
-                    ],
-                    lineStyle: {
-                        color: '#F007',
-                    },
+                    data: [{ type: 'average', name: 'Média da Fatura' }],
+                    lineStyle: { color: '#F007' },
                     label: {
                         show: true,
-                        formatter: 'R$ {c}', // Formatação do valor da média
-                        color: '#F00', // Cor do texto da média
+                        formatter: 'R$ {c}',
+                        color: '#F00',
                         fontSize: 8
                     }
                 }
@@ -775,31 +776,30 @@ async function renderGraficoFaturaBancariaMensal() {
             {
                 name: 'Saldo Restante',
                 type: 'bar',
-                data: dataSaldoValues,
+                data: dataSaldoValues.map((value, index) => ({
+                    value,
+                    itemStyle: {
+                        color: index === dataSaldoValues.length - 1
+                            ? 'rgba(0, 0, 255, 0.2)'
+                            : 'rgba(0, 128, 0, 0.3)',
+                        borderColor: index === dataSaldoValues.length - 1
+                            ? 'rgba(0, 0, 255, 0.8)'
+                            : 'rgba(0, 128, 0, 1)'
+                    }
+                })),
                 label: {
                     show: true,
                     position: 'top',
-                    formatter: function (params) {
-                        return `R$ ${params.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    },
+                    formatter: p => `R$ ${p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                     fontSize: 12,
-                    color: '#000'
-                },
-                itemStyle: {
-                    color: 'rgba(0, 128, 0, .3)',
-                    borderColor: 'rgba(0, 128, 0, 1)'
+                    color: '#000',
                 }
             }
         ]
     };
 
-    // Define as opções no gráfico e exibe
     chart.setOption(chartOptions);
-
-    // Ajusta o gráfico ao redimensionar a tela
-    window.addEventListener("resize", () => {
-        chart.resize();
-    });
+    window.addEventListener("resize", () => chart.resize());
 }
 
 // Inicializa os gráficos e dados ao carregar a página
